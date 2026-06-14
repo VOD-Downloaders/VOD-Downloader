@@ -52,7 +52,7 @@ pub struct SearchEpisodeParameters {
 pub async fn bridge_search_movie_streams(
     indexer: &config::Indexer, name: &str, year: u16, tmdb_id: u32, imdb_id: String, bridge_url: &Url, requester: &request::Requester,
 ) -> Result<Streams, SearchError> {
-    let mut url = bridge_url.clone().join(format!("/api/{}/movie", indexer.name).as_str()).unwrap();
+    let mut url = bridge_url.clone().join(format!("/api/{}/movie", indexer.based_on).as_str()).unwrap();
     let parameters = serde_url_params::to_string(&SearchMovieParameters {
         name: name.to_string(),
         year: year,
@@ -73,7 +73,7 @@ pub async fn bridge_search_episode_streams(
     indexer: &config::Indexer, name: &str, year: u16, tmdb_id: u32, imdb_id: String, season: u32, episode: u32, bridge_url: &Url,
     requester: &request::Requester,
 ) -> Result<Streams, SearchError> {
-    let mut url = bridge_url.clone().join(format!("/api/{}/series", indexer.name).as_str()).unwrap();
+    let mut url = bridge_url.clone().join(format!("/api/{}/series", indexer.based_on).as_str()).unwrap();
     let parameters = serde_url_params::to_string(&SearchEpisodeParameters {
         name: name.to_string(),
         year: year,
