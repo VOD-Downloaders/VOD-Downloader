@@ -49,7 +49,7 @@ impl Default for SeriesSearchParameters {
 }
 
 /////////////////////////////////////////////////////
-// TMDB interface
+// TMDB interface // TODO: Return Errors
 /////////////////////////////////////////////////////
 pub async fn tmdb_run_api_call<T>(api_call: &Url, requester: &request::Requester) -> T
 where

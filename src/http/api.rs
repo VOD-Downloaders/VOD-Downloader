@@ -4,6 +4,8 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use chrono::Datelike;
+use futures::TryFutureExt;
 use url::Url;
 use axum::{
     extract,
@@ -12,7 +14,10 @@ use axum::{
 };
 
 use super::bodies::*;
-use crate::env;
+use crate::{
+    env,
+    search::info::{tmdb_get_movie, tmdb_get_movie_external_ids},
+};
 use crate::config;
 use crate::request;
 use crate::search;
@@ -286,7 +291,9 @@ pub async fn get_episode_external_ids(
     })
 }
 
-pub async fn get_streams_movie(State(_state): State<Arc<AppState>>, Path(movie_id): Path<u32>) -> Result<StreamsResponse, ErrorResponse> {
+pub async fn get_streams_movie(
+    State(state): State<Arc<AppState>>, Path((indexer_name, movie_id)): Path<(String, u32)>,
+) -> Result<StreamsResponse, ErrorResponse> {
     trace!("Received get_streams_movie for movie {}", movie_id);
 
     let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
@@ -294,18 +301,44 @@ pub async fn get_streams_movie(State(_state): State<Arc<AppState>>, Path(movie_i
         error: format!("Unable to create requester object due to error: {}", error),
     })?;
 
-    // let response = requester;
-    // let streams = search::info::tmdb_get_episode_external_ids(series_id, season_number, episode_number, &requester).await;
+    let indexer = {
+        let guard = state.state.read().unwrap();
+        let Some(indexer) = guard.get_indexer_by_name(indexer_name.as_str()) else {
+            return Err(ErrorResponse {
+                status: StatusCode::BAD_REQUEST,
+                error: format!("Failed to find indexer by name: \"{}\".", indexer_name),
+            });
+        };
+        indexer.clone()
+    };
 
-    todo!()
-    // Ok(StreamsResponse {
-    //     status: StatusCode::OK,
-    //     streams: streams,
-    // })
+    let movie_info = tmdb_get_movie(movie_id, &requester).await;
+    let year = dateparser::parse(movie_info.release_date.as_str()).unwrap().year() as u16;
+    let external_ids = tmdb_get_movie_external_ids(movie_id, &requester).await;
+
+    let streams = search::streams::bridge_search_movie_streams(
+        &indexer,
+        movie_info.title.as_str(),
+        year,
+        movie_info.id,
+        external_ids.imdb_id,
+        &state.environment.bridge_url,
+        &requester,
+    )
+    .await
+    .map_err(|error| ErrorResponse {
+        status: StatusCode::FAILED_DEPENDENCY,
+        error: format!("Failed to find streams due to error: {}", error),
+    })?;
+
+    Ok(StreamsResponse {
+        status: StatusCode::OK,
+        streams: streams,
+    })
 }
 
 pub async fn get_streams_series(
-    State(_state): State<Arc<AppState>>, Path((series_id, season_number, episode_number)): Path<(u32, u32, u32)>,
+    State(_state): State<Arc<AppState>>, Path((indexer_name, series_id, season_number, episode_number)): Path<(String, u32, u32, u32)>,
 ) -> Result<GetEpisodeExternalIDsResponse, ErrorResponse> {
     trace!("Received get_streams_series for series {} season {} episode {}.", series_id, season_number, episode_number);
 
