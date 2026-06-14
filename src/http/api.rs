@@ -16,7 +16,10 @@ use axum::{
 use super::bodies::*;
 use crate::{
     env,
-    search::info::{tmdb_get_movie, tmdb_get_movie_external_ids},
+    search::info::{
+        tmdb_get_episode, tmdb_get_episode_external_ids, tmdb_get_movie, tmdb_get_movie_external_ids, tmdb_get_season, tmdb_get_series,
+        tmdb_get_series_external_ids,
+    },
 };
 use crate::config;
 use crate::request;
@@ -337,10 +340,64 @@ pub async fn get_streams_movie(
     })
 }
 
-pub async fn get_streams_series(
-    State(_state): State<Arc<AppState>>, Path((indexer_name, series_id, season_number, episode_number)): Path<(String, u32, u32, u32)>,
-) -> Result<GetEpisodeExternalIDsResponse, ErrorResponse> {
+pub async fn get_streams_episode(
+    State(state): State<Arc<AppState>>, Path((indexer_name, series_id, season_number, episode_number)): Path<(String, u32, u32, u32)>,
+) -> Result<StreamsResponse, ErrorResponse> {
     trace!("Received get_streams_series for series {} season {} episode {}.", series_id, season_number, episode_number);
 
-    todo!()
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    let indexer = {
+        let guard = state.state.read().unwrap();
+        let Some(indexer) = guard.get_indexer_by_name(indexer_name.as_str()) else {
+            return Err(ErrorResponse {
+                status: StatusCode::BAD_REQUEST,
+                error: format!("Failed to find indexer by name: \"{}\".", indexer_name),
+            });
+        };
+        indexer.clone()
+    };
+
+    let series_info = tmdb_get_series(series_id, &requester).await;
+    let season_info = tmdb_get_season(series_id, season_number, &requester).await;
+    let episode_info = tmdb_get_episode(series_id, season_number, episode_number, &requester).await;
+    let year = dateparser::parse(
+        episode_info
+            .air_date
+            .unwrap_or(
+                season_info
+                    .air_date
+                    .unwrap_or(series_info.first_air_date.unwrap_or("1970-01-01".to_string())),
+            )
+            .as_str(),
+    )
+    .unwrap()
+    .year() as u16;
+    let external_ids = tmdb_get_series_external_ids(series_id, &requester).await;
+    // let external_ids = tmdb_get_episode_external_ids(series_id, season_number, episode_number, &requester).await;
+
+    let streams = search::streams::bridge_search_episode_streams(
+        &indexer,
+        episode_info.name.as_str(),
+        year,
+        series_info.id,
+        external_ids.imdb_id,
+        season_number,
+        episode_number,
+        &state.environment.bridge_url,
+        &requester,
+    )
+    .await
+    .map_err(|error| ErrorResponse {
+        status: StatusCode::FAILED_DEPENDENCY,
+        error: format!("Failed to find streams due to error: {}", error),
+    })?;
+
+    Ok(StreamsResponse {
+        status: StatusCode::OK,
+        streams: streams,
+    })
 }

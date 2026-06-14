@@ -33,7 +33,7 @@ pub struct SearchMovieParameters {
 }
 
 #[derive(Debug, Serialize)]
-pub struct SearchSeriesParameters {
+pub struct SearchEpisodeParameters {
     pub name: String,
     pub year: u16,
     pub season: u32,
@@ -69,13 +69,12 @@ pub async fn bridge_search_movie_streams(
     Ok(streams)
 }
 
-pub async fn bridge_search_series_streams(
+pub async fn bridge_search_episode_streams(
     indexer: &config::Indexer, name: &str, year: u16, tmdb_id: u32, imdb_id: String, season: u32, episode: u32, bridge_url: &Url,
     requester: &request::Requester,
 ) -> Result<Streams, SearchError> {
-    let json_str = 10;
     let mut url = bridge_url.clone().join(format!("/api/{}/series", indexer.name).as_str()).unwrap();
-    let parameters = serde_url_params::to_string(&SearchSeriesParameters {
+    let parameters = serde_url_params::to_string(&SearchEpisodeParameters {
         name: name.to_string(),
         year: year,
         season: season,

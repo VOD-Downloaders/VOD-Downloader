@@ -109,7 +109,7 @@ impl Router {
             )
             // Streams
             .route("/api/streams/indexer/{indexer_name}/movie/{movie_id}", routing::get(api::get_streams_movie))
-            .route("/api/streams/indexer/{indexer_name}/series/{series_id}/season/{season_number}/episode/{episode_number}", routing::get(api::get_streams_series))
+            .route("/api/streams/indexer/{indexer_name}/series/{series_id}/season/{season_number}/episode/{episode_number}", routing::get(api::get_streams_episode))
             // Download // TODO: ...
 
             // HTML, CSS, JS
