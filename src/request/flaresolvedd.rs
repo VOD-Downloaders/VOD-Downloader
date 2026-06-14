@@ -159,7 +159,7 @@ impl FlaresolveddRequester {
         })
     }
 
-    pub async fn get_file_contents(&self, url: &Url, headers: HeaderMap) -> Result<Vec<u8>, RequestError> {
+    pub async fn get_bytes(&self, url: &Url, headers: HeaderMap) -> Result<Vec<u8>, RequestError> {
         // SESSION
         if self.session_id.is_some() {
             let request_command = FlareSolverrCommand {
@@ -205,6 +205,11 @@ impl FlaresolveddRequester {
                 Err(error) => Err(RequestError::FailedToReadBytes(error.to_string())),
             }
         }
+    }
+
+    pub async fn get_string(&self, url: &Url, headers: HeaderMap) -> Result<String, RequestError> {
+        let bytes = self.get_bytes(url, headers).await?;
+        String::from_utf8(bytes).map_err(|_error| RequestError::FailedToConvertBytesToString)
     }
 
     pub fn get_specification(&self) -> &RequesterSpecification {

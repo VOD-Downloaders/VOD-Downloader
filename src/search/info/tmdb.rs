@@ -56,15 +56,9 @@ where
     T: serde::de::DeserializeOwned + Default + std::fmt::Debug,
 {
     trace!("Requesting API results from: \"{}\".", api_call);
-    let result = requester.get_file_contents(api_call, None).await;
-    let Ok(response) = result else {
-        error!("Failed to retrieve API results from \"{}\", error: {}", api_call, result.unwrap_err());
-        return T::default();
-    };
-
-    let result = String::from_utf8(response);
+    let result = requester.get_string(api_call, None).await;
     let Ok(json_str) = result else {
-        error!("Failed to convert API results response to a string, error: {}.", result.unwrap_err());
+        error!("Failed to retrieve API results from \"{}\", error: {}", api_call, result.unwrap_err());
         return T::default();
     };
 

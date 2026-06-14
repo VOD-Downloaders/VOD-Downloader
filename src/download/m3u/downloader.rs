@@ -49,7 +49,7 @@ pub async fn download_segments(
 
 async fn download_segment(indexer: &config::Indexer, url: &Url, requester: &request::Requester, output_file: &mut File) -> Result<(), DownloadError> {
     let contents = requester
-        .get_file_contents(url, Some(indexer.download.segment_download.headers.clone()))
+        .get_bytes(url, Some(indexer.download.segment_download.headers.clone()))
         .await
         .map_err(DownloadError::RequestFailed)?;
 
