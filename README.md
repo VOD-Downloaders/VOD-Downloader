@@ -31,6 +31,7 @@ services:
       - ./output:/output
     environment:
       - LOG_LEVEL=info
+      - BRIDGE_URL=http://fmhy_bridge:3000/
       - FLARESOLVERR_URL=http://flaresolverr:8191/v1
     ports:
       - 8080:8080
