@@ -420,7 +420,8 @@ pub async fn post_start_download(
         error: format!("Unable to create requester object due to error: {}", error),
     })?;
 
-    let output_file = PathBuf::from(payload.output_file);
+    // TODO: Maybe a CONST somewhere
+    let output_file = PathBuf::from("/output/").join(PathBuf::from(payload.output_file));
 
     tokio::spawn(async move {
         let result = download::download_stream(&indexer, payload.stream, &requester, output_file.as_path()).await;
