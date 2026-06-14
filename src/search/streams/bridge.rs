@@ -1,6 +1,6 @@
 use thiserror::Error;
 use url::Url;
-use serde::{Serialize, Deserialize};
+use serde::{Serialize};
 
 use crate::config;
 use crate::request;

@@ -80,11 +80,9 @@ impl EnvOptions {
             return Err(EnvError::NoBridgeUrl);
         };
 
-        let bridge_url = Url::parse(bridge_url.as_str()).map_err(|error| {
-            return EnvError::InvalidBridgeUrl {
-                url: bridge_url,
-                error: error,
-            };
+        let bridge_url = Url::parse(bridge_url.as_str()).map_err(|error| EnvError::InvalidBridgeUrl {
+            url: bridge_url,
+            error: error,
         })?;
 
         Ok(bridge_url)

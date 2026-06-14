@@ -5,7 +5,6 @@ use std::{
 };
 
 use chrono::Datelike;
-use futures::TryFutureExt;
 use url::Url;
 use axum::{
     extract,
@@ -16,10 +15,7 @@ use axum::{
 use super::bodies::*;
 use crate::{
     env,
-    search::info::{
-        tmdb_get_episode, tmdb_get_episode_external_ids, tmdb_get_movie, tmdb_get_movie_external_ids, tmdb_get_season, tmdb_get_series,
-        tmdb_get_series_external_ids,
-    },
+    search::info::{tmdb_get_episode, tmdb_get_movie, tmdb_get_movie_external_ids, tmdb_get_season, tmdb_get_series, tmdb_get_series_external_ids},
 };
 use crate::config;
 use crate::request;
