@@ -68,17 +68,7 @@ docker compose up -d
 > `flaresolverr` is only required for Cloudflare-protected sites. If you don't need it, remove the service
 > and the `FLARESOLVERR_URL` environment variable.
 
-## Usage
-
-The WebUI is served on [`http://localhost:8080`](http://localhost:8080). 
-
-Use the sidebar to navigate between pages:
-
-1. **Search** – // TODO: Search for a series
-2. **Streams** – Shows available streams for selected episode or movie.
-3. **Downloads** – Shows the downloads you've started. Finished files land in the `./output` directory.
-
-### Configuration
+## Configuration
 
 The container is configured through environment variables:
 
@@ -88,6 +78,16 @@ The container is configured through environment variables:
 | `BRIDGE_URL` | `http://fmhy_bridge:3000/` | FMHY Bridge container url |
 | `FLARESOLVERR_URL` | - | FlareSolverr endpoint (may be empty) |
 | `WEBUI_PORT` | `8080` | Port the WebUI/API listens on |
+
+## Usage
+
+The WebUI is served on [`http://localhost:8080`](http://localhost:8080). 
+
+Use the sidebar to navigate between pages:
+
+1. **Search** – // TODO: Search for a series
+2. **Streams** – Shows available streams for selected episode or movie.
+3. **Downloads** – Shows the downloads you've started. Finished files land in the `./output` directory.
 
 ## API
 
