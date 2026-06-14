@@ -121,7 +121,7 @@ pub async fn get_search_movie(
         error: format!("Unable to create requester object due to error: {}", error),
     })?;
 
-    let response = search::info::tmdb_get_movies(query.name.as_str(), Some(query.page), &requester).await;
+    let response = search::info::tmdb_search_movies(query.name.as_str(), Some(query.page), &requester).await;
 
     Ok(SearchMovieResponse {
         status: StatusCode::OK,
@@ -140,7 +140,7 @@ pub async fn get_search_series(
         error: format!("Unable to create requester object due to error: {}", error),
     })?;
 
-    let response = search::info::tmdb_get_series(query.name.as_str(), Some(query.page), &requester).await;
+    let response = search::info::tmdb_search_series(query.name.as_str(), Some(query.page), &requester).await;
 
     Ok(SearchSeriesResponse {
         status: StatusCode::OK,

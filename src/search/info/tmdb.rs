@@ -81,7 +81,7 @@ where
     body
 }
 
-pub async fn tmdb_get_movies(movie_name: &str, page: Option<i32>, requester: &request::Requester) -> MoviePageResultBody {
+pub async fn tmdb_search_movies(movie_name: &str, page: Option<i32>, requester: &request::Requester) -> MoviePageResultBody {
     let page = page.unwrap_or(1);
     let parameters = serde_url_params::to_string(&MovieSearchParameters {
         query: movie_name.to_string(),
@@ -95,7 +95,7 @@ pub async fn tmdb_get_movies(movie_name: &str, page: Option<i32>, requester: &re
     tmdb_run_api_call::<MoviePageResultBody>(&url, requester).await
 }
 
-pub async fn tmdb_get_series(series_name: &str, page: Option<i32>, requester: &request::Requester) -> SeriesPageResultBody {
+pub async fn tmdb_search_series(series_name: &str, page: Option<i32>, requester: &request::Requester) -> SeriesPageResultBody {
     let page = page.unwrap_or(1);
     let parameters = serde_url_params::to_string(&SeriesSearchParameters {
         query: series_name.to_string(),
@@ -109,4 +109,60 @@ pub async fn tmdb_get_series(series_name: &str, page: Option<i32>, requester: &r
     tmdb_run_api_call::<SeriesPageResultBody>(&url, requester).await
 }
 
-// pub async fn tmdb_get_movie(movie_id: u32) -> FullMovieBody {}
+pub async fn tmdb_get_movie(movie_id: u32, requester: &request::Requester) -> FullMovieBody {
+    let api_call = format!("{}/movie/{}", TMDB_API_URL, movie_id);
+    let url = Url::parse(api_call.as_str()).unwrap();
+
+    tmdb_run_api_call::<FullMovieBody>(&url, requester).await
+}
+
+pub async fn tmdb_get_series(series_id: u32, requester: &request::Requester) -> FullSeriesBody {
+    let api_call = format!("{}/tv/{}", TMDB_API_URL, series_id);
+    let url = Url::parse(api_call.as_str()).unwrap();
+
+    tmdb_run_api_call::<FullSeriesBody>(&url, requester).await
+}
+
+pub async fn tmdb_get_season(series_id: u32, season_number: u32, requester: &request::Requester) -> FullSeasonBody {
+    let api_call = format!("{}/tv/{}/season/{}", TMDB_API_URL, series_id, season_number);
+    let url = Url::parse(api_call.as_str()).unwrap();
+
+    tmdb_run_api_call::<FullSeasonBody>(&url, requester).await
+}
+
+pub async fn tmdb_get_episode(series_id: u32, season_number: u32, episode_number: u32, requester: &request::Requester) -> FullEpisodeBody {
+    let api_call = format!("{}/tv/{}/season/{}/episode/{}", TMDB_API_URL, series_id, season_number, episode_number);
+    let url = Url::parse(api_call.as_str()).unwrap();
+
+    tmdb_run_api_call::<FullEpisodeBody>(&url, requester).await
+}
+
+pub async fn tmdb_get_movie_external_ids(movie_id: u32, requester: &request::Requester) -> MovieExternalIDsBody {
+    let api_call = format!("{}/movie/{}/external_ids", TMDB_API_URL, movie_id);
+    let url = Url::parse(api_call.as_str()).unwrap();
+
+    tmdb_run_api_call::<MovieExternalIDsBody>(&url, requester).await
+}
+
+pub async fn tmdb_get_series_external_ids(series_id: u32, requester: &request::Requester) -> SeriesExternalIDsBody {
+    let api_call = format!("{}/tv/{}/external_ids", TMDB_API_URL, series_id);
+    let url = Url::parse(api_call.as_str()).unwrap();
+
+    tmdb_run_api_call::<SeriesExternalIDsBody>(&url, requester).await
+}
+
+pub async fn tmdb_get_season_external_ids(series_id: u32, season_number: u32, requester: &request::Requester) -> SeasonExternalIDsBody {
+    let api_call = format!("{}/tv/{}/season/{}/external_ids", TMDB_API_URL, series_id, season_number);
+    let url = Url::parse(api_call.as_str()).unwrap();
+
+    tmdb_run_api_call::<SeasonExternalIDsBody>(&url, requester).await
+}
+
+pub async fn tmdb_get_episode_external_ids(
+    series_id: u32, season_number: u32, episode_number: u32, requester: &request::Requester,
+) -> EpisodeExternalIDsBody {
+    let api_call = format!("{}/tv/{}/season/{}/episode/{}/external_ids", TMDB_API_URL, series_id, season_number, episode_number);
+    let url = Url::parse(api_call.as_str()).unwrap();
+
+    tmdb_run_api_call::<EpisodeExternalIDsBody>(&url, requester).await
+}
