@@ -32,12 +32,9 @@ services:
     environment:
       - LOG_LEVEL=info
       - BRIDGE_URL=http://fmhy_bridge:3000/
-      - FLARESOLVERR_URL=http://flaresolverr:8191/v1
+      - FLARESOLVERR_URL=http://flaresolverr:8191/v1 # Optional
     ports:
       - 8080:8080
-    depends_on:
-      flaresolverr:
-        condition: service_healthy
     restart: unless-stopped
 
   fmhy_bridge:
@@ -47,7 +44,7 @@ services:
       - LOG_LEVEL=info
     restart: unless-stopped
 
-  flaresolverr:
+  flaresolverr: # Optional
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
     environment:
@@ -68,8 +65,8 @@ docker compose up -d
 ```
 
 > [!NOTE]
-> `flaresolverr` is only required for Cloudflare-protected sites. If you don't need it, remove the service,
-> the `depends_on` block, and the `FLARESOLVERR_URL` environment variable.
+> `flaresolverr` is only required for Cloudflare-protected sites. If you don't need it, remove the service
+> and the `FLARESOLVERR_URL` environment variable.
 
 ## Usage
 
