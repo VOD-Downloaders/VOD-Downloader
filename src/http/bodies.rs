@@ -6,7 +6,7 @@ use axum::{
 
 use crate::config::Indexer;
 use crate::config::IndexerSpecification;
-use crate::search::streams::Stream;
+use crate::search::streams::Streams;
 use crate::search::info::*;
 
 /////////////////////////////////////////////////////
@@ -245,12 +245,12 @@ impl IntoResponse for GetEpisodeExternalIDsResponse {
 pub struct StreamsResponse {
     #[serde(skip)]
     pub status: StatusCode,
-    pub streams: Vec<Stream>,
+    pub streams: Streams,
 }
 
 impl IntoResponse for StreamsResponse {
     fn into_response(self) -> response::Response {
-        (self.status, response::Json(self)).into_response()
+        (self.status, response::Json(self.streams)).into_response()
     }
 }
 

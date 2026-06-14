@@ -2,24 +2,28 @@ use url::Url;
 use serde::{Serialize, Deserialize};
 
 /////////////////////////////////////////////////////
-// StreamType
-/////////////////////////////////////////////////////
-#[derive(Debug, Serialize, Deserialize)]
-pub enum StreamType {
-    M3U(Vec<Url>),
-}
-
-impl Default for StreamType {
-    fn default() -> Self {
-        StreamType::M3U(Vec::new())
-    }
-}
-
-/////////////////////////////////////////////////////
 // Stream
 /////////////////////////////////////////////////////
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Stream {
+    pub url: Url,
     pub quality: String,
-    pub stream_type: StreamType,
+}
+
+/////////////////////////////////////////////////////
+// Subtitle
+/////////////////////////////////////////////////////
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Subtitle {
+    pub url: Url,
+    pub language: String,
+}
+
+/////////////////////////////////////////////////////
+// Streams
+/////////////////////////////////////////////////////
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Streams {
+    pub streams: Vec<Stream>,
+    pub subtitles: Vec<Subtitle>,
 }

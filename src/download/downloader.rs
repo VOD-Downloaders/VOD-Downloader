@@ -9,7 +9,6 @@ use tokio::fs::OpenOptions;
 use crate::config;
 use crate::request;
 use crate::search::streams::Stream;
-use crate::search::streams::StreamType;
 
 use super::m3u;
 

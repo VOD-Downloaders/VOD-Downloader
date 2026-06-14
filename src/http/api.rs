@@ -285,3 +285,29 @@ pub async fn get_episode_external_ids(
         response: response,
     })
 }
+
+pub async fn get_streams_movie(State(_state): State<Arc<AppState>>, Path(movie_id): Path<u32>) -> Result<StreamsResponse, ErrorResponse> {
+    trace!("Received get_streams_movie for movie {}", movie_id);
+
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    // let response = requester;
+    // let streams = search::info::tmdb_get_episode_external_ids(series_id, season_number, episode_number, &requester).await;
+
+    todo!()
+    // Ok(StreamsResponse {
+    //     status: StatusCode::OK,
+    //     streams: streams,
+    // })
+}
+
+pub async fn get_streams_series(
+    State(_state): State<Arc<AppState>>, Path((series_id, season_number, episode_number)): Path<(u32, u32, u32)>,
+) -> Result<GetEpisodeExternalIDsResponse, ErrorResponse> {
+    trace!("Received get_streams_series for series {} season {} episode {}.", series_id, season_number, episode_number);
+
+    todo!()
+}
