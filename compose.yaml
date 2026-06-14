@@ -21,9 +21,7 @@ services:
     image: ghcr.io/ggjorven/fmhy-bridge:latest
     container_name: fmhy_bridge
     environment:
-      - LOG_LEVEL=info
-    ports:
-      - 3000:3000
+      - LOG_LEVEL=debug
     restart: unless-stopped
 
   flaresolverr:

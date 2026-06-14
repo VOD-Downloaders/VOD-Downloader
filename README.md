@@ -45,8 +45,6 @@ services:
     container_name: fmhy_bridge
     environment:
       - LOG_LEVEL=info
-    ports:
-      - 3000:3000
     restart: unless-stopped
 
   flaresolverr:
