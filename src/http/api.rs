@@ -16,7 +16,7 @@ use crate::env;
 use crate::config;
 use crate::request;
 use crate::search;
-use crate::download;
+// use crate::download;
 
 /////////////////////////////////////////////////////
 // State
