@@ -305,7 +305,7 @@ pub struct FullSeasonBody {
     pub air_date: Option<String>,
     pub episodes: Vec<EpisodeBody>,
     pub name: String,
-    pub networks: NetworkBody,
+    pub networks: Vec<NetworkBody>,
     pub overview: String,
     pub id: u32,
     pub poster_path: String,
