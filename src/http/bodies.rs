@@ -7,8 +7,8 @@ use axum::{
 use crate::config::Indexer;
 use crate::config::IndexerSpecification;
 use crate::search::streams::Stream;
-use crate::search::info::MovieResultBody;
-use crate::search::info::SeriesResultBody;
+use crate::search::info::MoviePageResultBody;
+use crate::search::info::SeriesPageResultBody;
 
 /////////////////////////////////////////////////////
 // Requests
@@ -116,12 +116,12 @@ impl IntoResponse for IndexerSpecificationsResponse {
 pub struct SearchMovieResponse {
     #[serde(skip)]
     pub status: StatusCode,
-    pub response: MovieResultBody,
+    pub response: MoviePageResultBody,
 }
 
 impl IntoResponse for SearchMovieResponse {
     fn into_response(self) -> response::Response {
-        (self.status, response::Json(self)).into_response()
+        (self.status, response::Json(self.response)).into_response()
     }
 }
 
@@ -129,12 +129,12 @@ impl IntoResponse for SearchMovieResponse {
 pub struct SearchSeriesResponse {
     #[serde(skip)]
     pub status: StatusCode,
-    pub response: SeriesResultBody,
+    pub response: SeriesPageResultBody,
 }
 
 impl IntoResponse for SearchSeriesResponse {
     fn into_response(self) -> response::Response {
-        (self.status, response::Json(self)).into_response()
+        (self.status, response::Json(self.response)).into_response()
     }
 }
 

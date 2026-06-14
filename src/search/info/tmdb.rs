@@ -1,9 +1,9 @@
 use url::Url;
 use serde::{Serialize, Deserialize};
 
-use super::MovieResultBody;
-use super::SeriesResultBody;
+use super::SeriesPageResultBody;
 
+use crate::search::info::*;
 use crate::request;
 
 /////////////////////////////////////////////////////
@@ -81,7 +81,7 @@ where
     body
 }
 
-pub async fn tmdb_get_movies(movie_name: &str, page: Option<i32>, requester: &request::Requester) -> MovieResultBody {
+pub async fn tmdb_get_movies(movie_name: &str, page: Option<i32>, requester: &request::Requester) -> MoviePageResultBody {
     let page = page.unwrap_or(1);
     let parameters = serde_url_params::to_string(&MovieSearchParameters {
         query: movie_name.to_string(),
@@ -92,10 +92,10 @@ pub async fn tmdb_get_movies(movie_name: &str, page: Option<i32>, requester: &re
     let api_call = format!("{}/movies/search?{}", TMDB_API_URL, parameters);
     let url = Url::parse(api_call.as_str()).unwrap();
 
-    tmdb_run_api_call::<MovieResultBody>(&url, requester).await
+    tmdb_run_api_call::<MoviePageResultBody>(&url, requester).await
 }
 
-pub async fn tmdb_get_series(series_name: &str, page: Option<i32>, requester: &request::Requester) -> SeriesResultBody {
+pub async fn tmdb_get_series(series_name: &str, page: Option<i32>, requester: &request::Requester) -> SeriesPageResultBody {
     let page = page.unwrap_or(1);
     let parameters = serde_url_params::to_string(&SeriesSearchParameters {
         query: series_name.to_string(),
@@ -106,5 +106,7 @@ pub async fn tmdb_get_series(series_name: &str, page: Option<i32>, requester: &r
     let api_call = format!("{}/tv/search?{}", TMDB_API_URL, parameters);
     let url = Url::parse(api_call.as_str()).unwrap();
 
-    tmdb_run_api_call::<SeriesResultBody>(&url, requester).await
+    tmdb_run_api_call::<SeriesPageResultBody>(&url, requester).await
 }
+
+// pub async fn tmdb_get_movie(movie_id: u32) -> FullMovieBody {}
