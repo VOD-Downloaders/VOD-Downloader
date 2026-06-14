@@ -7,7 +7,7 @@ use std::{
 use url::Url;
 use axum::{
     extract,
-    extract::{State, Query},
+    extract::{State, Query, Path},
     http::{StatusCode},
 };
 
@@ -115,7 +115,6 @@ pub async fn get_search_movie(
 ) -> Result<SearchMovieResponse, ErrorResponse> {
     trace!("Received post_search_movie for \"{}\" on page {}.", query.name, query.page);
 
-    // TODO: ...
     let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
         status: StatusCode::INTERNAL_SERVER_ERROR,
         error: format!("Unable to create requester object due to error: {}", error),
@@ -134,7 +133,6 @@ pub async fn get_search_series(
 ) -> Result<SearchSeriesResponse, ErrorResponse> {
     trace!("Received post_search_series for \"{}\" on page {}.", query.name, query.page);
 
-    // TODO: ...
     let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
         status: StatusCode::INTERNAL_SERVER_ERROR,
         error: format!("Unable to create requester object due to error: {}", error),
@@ -143,6 +141,146 @@ pub async fn get_search_series(
     let response = search::info::tmdb_search_series(query.name.as_str(), Some(query.page), &requester).await;
 
     Ok(SearchSeriesResponse {
+        status: StatusCode::OK,
+        response: response,
+    })
+}
+
+pub async fn get_movie(State(_state): State<Arc<AppState>>, Path(movie_id): Path<u32>) -> Result<GetMovieResponse, ErrorResponse> {
+    trace!("Received get_movie for {}.", movie_id);
+
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    let response = search::info::tmdb_get_movie(movie_id, &requester).await;
+
+    Ok(GetMovieResponse {
+        status: StatusCode::OK,
+        response: response,
+    })
+}
+
+pub async fn get_series(State(_state): State<Arc<AppState>>, Path(series_id): Path<u32>) -> Result<GetSeriesResponse, ErrorResponse> {
+    trace!("Received get_series for {}.", series_id);
+
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    let response = search::info::tmdb_get_series(series_id, &requester).await;
+
+    Ok(GetSeriesResponse {
+        status: StatusCode::OK,
+        response: response,
+    })
+}
+
+pub async fn get_season(
+    State(_state): State<Arc<AppState>>, Path((series_id, season_number)): Path<(u32, u32)>,
+) -> Result<GetSeasonResponse, ErrorResponse> {
+    trace!("Received get_season for series {} season {}.", series_id, season_number);
+
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    let response = search::info::tmdb_get_season(series_id, season_number, &requester).await;
+
+    Ok(GetSeasonResponse {
+        status: StatusCode::OK,
+        response: response,
+    })
+}
+
+pub async fn get_episode(
+    State(_state): State<Arc<AppState>>, Path((series_id, season_number, episode_number)): Path<(u32, u32, u32)>,
+) -> Result<GetEpisodeResponse, ErrorResponse> {
+    trace!("Received get_episode for series {} season {} episode {}.", series_id, season_number, episode_number);
+
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    let response = search::info::tmdb_get_episode(series_id, season_number, episode_number, &requester).await;
+
+    Ok(GetEpisodeResponse {
+        status: StatusCode::OK,
+        response: response,
+    })
+}
+
+pub async fn get_movie_external_ids(
+    State(_state): State<Arc<AppState>>, Path(movie_id): Path<u32>,
+) -> Result<GetMovieExternalIDsResponse, ErrorResponse> {
+    trace!("Received get_movie_external_ids for {}.", movie_id);
+
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    let response = search::info::tmdb_get_movie_external_ids(movie_id, &requester).await;
+
+    Ok(GetMovieExternalIDsResponse {
+        status: StatusCode::OK,
+        response: response,
+    })
+}
+
+pub async fn get_series_external_ids(
+    State(_state): State<Arc<AppState>>, Path(series_id): Path<u32>,
+) -> Result<GetSeriesExternalIDsResponse, ErrorResponse> {
+    trace!("Received get_series_external_ids for {}.", series_id);
+
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    let response = search::info::tmdb_get_series_external_ids(series_id, &requester).await;
+
+    Ok(GetSeriesExternalIDsResponse {
+        status: StatusCode::OK,
+        response: response,
+    })
+}
+
+pub async fn get_season_external_ids(
+    State(_state): State<Arc<AppState>>, Path((series_id, season_number)): Path<(u32, u32)>,
+) -> Result<GetSeasonExternalIDsResponse, ErrorResponse> {
+    trace!("Received get_season_external_ids for series {} season {}.", series_id, season_number);
+
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    let response = search::info::tmdb_get_season_external_ids(series_id, season_number, &requester).await;
+
+    Ok(GetSeasonExternalIDsResponse {
+        status: StatusCode::OK,
+        response: response,
+    })
+}
+
+pub async fn get_episode_external_ids(
+    State(_state): State<Arc<AppState>>, Path((series_id, season_number, episode_number)): Path<(u32, u32, u32)>,
+) -> Result<GetEpisodeExternalIDsResponse, ErrorResponse> {
+    trace!("Received get_episode_external_ids for series {} season {} episode {}.", series_id, season_number, episode_number);
+
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::INTERNAL_SERVER_ERROR,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    let response = search::info::tmdb_get_episode_external_ids(series_id, season_number, episode_number, &requester).await;
+
+    Ok(GetEpisodeExternalIDsResponse {
         status: StatusCode::OK,
         response: response,
     })

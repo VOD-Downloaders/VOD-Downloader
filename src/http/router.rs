@@ -92,8 +92,19 @@ impl Router {
             .route("/api/indexers/delete", routing::post(api::post_delete_indexer))
             .route("/api/indexers/specifications", routing::get(api::get_indexer_specifications))
             .route("/api/indexers/specifications/refresh", routing::post(api::post_refresh_indexer_specifications))
-            .route("/api/search/movie", routing::get(api::get_search_movie))
-            .route("/api/search/series", routing::get(api::get_search_series))
+            .route("/api/movie/search", routing::get(api::get_search_movie))
+            .route("/api/series/search", routing::get(api::get_search_series))
+            .route("/api/movie/{movie_id}", routing::get(api::get_movie))
+            .route("/api/movie/{movie_id}/external_ids", routing::get(api::get_movie_external_ids))
+            .route("/api/series/{series_id}", routing::get(api::get_series))
+            .route("/api/series/{series_id}/external_ids", routing::get(api::get_series_external_ids))
+            .route("/api/series/{series_id}/season/{season_number}", routing::get(api::get_season))
+            .route("/api/series/{series_id}/season/{season_number}/external_ids", routing::get(api::get_season_external_ids))
+            .route("/api/series/{series_id}/season/{season_number}/episode/{episode_number}", routing::get(api::get_episode))
+            .route(
+                "/api/series/{series_id}/season/{season_number}/episode/{episode_number}/external_ids",
+                routing::get(api::get_episode_external_ids),
+            )
 
             // HTML, CSS, JS
             .fallback_service(web_source_service)

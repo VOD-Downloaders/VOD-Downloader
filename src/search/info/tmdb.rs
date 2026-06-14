@@ -89,7 +89,7 @@ pub async fn tmdb_search_movies(movie_name: &str, page: Option<i32>, requester: 
         ..MovieSearchParameters::default()
     })
     .unwrap();
-    let api_call = format!("{}/movies/search?{}", TMDB_API_URL, parameters);
+    let api_call = format!("{}/search/movie?{}", TMDB_API_URL, parameters);
     let url = Url::parse(api_call.as_str()).unwrap();
 
     tmdb_run_api_call::<MoviePageResultBody>(&url, requester).await
@@ -103,7 +103,7 @@ pub async fn tmdb_search_series(series_name: &str, page: Option<i32>, requester:
         ..SeriesSearchParameters::default()
     })
     .unwrap();
-    let api_call = format!("{}/tv/search?{}", TMDB_API_URL, parameters);
+    let api_call = format!("{}/search/tv?{}", TMDB_API_URL, parameters);
     let url = Url::parse(api_call.as_str()).unwrap();
 
     tmdb_run_api_call::<SeriesPageResultBody>(&url, requester).await
