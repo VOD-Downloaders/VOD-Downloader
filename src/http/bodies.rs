@@ -6,6 +6,7 @@ use axum::{
 
 use crate::config::Indexer;
 use crate::config::IndexerSpecification;
+use crate::search::streams::Stream;
 use crate::search::streams::Streams;
 use crate::search::info::*;
 
@@ -20,6 +21,12 @@ pub struct CreateIndexerRequest {
 #[derive(Debug, Deserialize)]
 pub struct DeleteIndexerRequest {
     pub name: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct StartDownloadRequest {
+    pub stream: Stream,
+    pub output_file: String,
 }
 
 /////////////////////////////////////////////////////
@@ -255,13 +262,13 @@ impl IntoResponse for StreamsResponse {
 }
 
 #[derive(Serialize)]
-pub struct DownloadResponse {
+pub struct StartDownloadResponse {
     #[serde(skip)]
     pub status: StatusCode,
     pub id: u32,
 }
 
-impl IntoResponse for DownloadResponse {
+impl IntoResponse for StartDownloadResponse {
     fn into_response(self) -> response::Response {
         (self.status, response::Json(self)).into_response()
     }

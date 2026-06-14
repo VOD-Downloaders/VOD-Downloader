@@ -20,7 +20,7 @@ use crate::{
 use crate::config;
 use crate::request;
 use crate::search;
-// use crate::download;
+use crate::download;
 
 /////////////////////////////////////////////////////
 // State
@@ -395,5 +395,50 @@ pub async fn get_streams_episode(
     Ok(StreamsResponse {
         status: StatusCode::OK,
         streams: streams,
+    })
+}
+
+pub async fn post_start_download(
+    State(state): State<Arc<AppState>>, Path(indexer_name): Path<String>, extract::Json(payload): extract::Json<StartDownloadRequest>,
+) -> Result<StartDownloadResponse, ErrorResponse> {
+    trace!("Received post_start_download for \"{:?}\".", payload);
+
+    let indexer = {
+        let guard = state.state.read().unwrap();
+        let Some(indexer) = guard.get_indexer_by_name(indexer_name.as_str()) else {
+            return Err(ErrorResponse {
+                status: StatusCode::BAD_REQUEST,
+                error: format!("Indexer by name \"{}\" doesn't exist.", indexer_name),
+            });
+        };
+        indexer.clone()
+    };
+
+    // TODO: Handle cloudflare
+    let requester = request::Requester::get_curl(request::RequesterSpecification::default()).map_err(|error| ErrorResponse {
+        status: StatusCode::PRECONDITION_FAILED,
+        error: format!("Unable to create requester object due to error: {}", error),
+    })?;
+
+    let output_file = PathBuf::from(payload.output_file);
+
+    tokio::spawn(async move {
+        let result = download::download_stream(&indexer, payload.stream, &requester, output_file.as_path()).await;
+
+        if let Err(error) = result {
+            error!("Download failed due to error: {}", error);
+        }
+    });
+
+    let id = rand::random::<u32>();
+    trace!("Adding download by id {} to active downloads...", id);
+    {
+        let mut guard = state.downloads.write().unwrap();
+        guard.insert(id, DownloadInfo {});
+    }
+
+    Ok(StartDownloadResponse {
+        status: StatusCode::OK,
+        id: id,
     })
 }
