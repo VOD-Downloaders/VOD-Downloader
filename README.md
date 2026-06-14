@@ -90,8 +90,9 @@ The container is configured through environment variables:
 | Variable | Default | Description |
 |---|---|---|
 | `LOG_LEVEL` | `info` | Log verbosity: `debug` / `info` / `warning` / `error` |
-| `WEBUI_PORT` | `8080` | Port the WebUI/API listens on |
+| `BRIDGE_URL` | `http://fmhy_bridge:3000/` | FMHY Bridge container url |
 | `FLARESOLVERR_URL` | - | FlareSolverr endpoint (may be empty) |
+| `WEBUI_PORT` | `8080` | Port the WebUI/API listens on |
 
 ## API
 
