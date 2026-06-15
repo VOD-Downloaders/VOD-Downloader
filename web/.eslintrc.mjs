@@ -8,7 +8,12 @@ export default [
   js.configs.recommended,
   {
     languageOptions: {
-      globals: globals.browser
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: {
+        ...globals.browser,
+        bootstrap: "readonly"
+      }
     }
   }
 ];

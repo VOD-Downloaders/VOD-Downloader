@@ -1,22 +1,29 @@
-// Reusable sidebar. Reused on every page via <component-sidebar></component-sidebar>.
-// Active link determined from window.location.pathname, so no per-page wiring needed.
+// Reusable, modular sidebar. Used on the single-page shell via <component-sidebar></component-sidebar>.
+// Active link is derived from the current hash route, so no per-page wiring is needed.
 
 class Sidebar extends HTMLElement {
     static PAGES = [
-        { href: "index.html", label: "Home" },
-        { href: "indexers.html", label: "Indexers" },
-        { href: "discover.html", label: "Discover" },
-        { href: "search.html", label: "Search" },
-        { href: "streams.html", label: "Streams" },
-        { href: "downloads.html", label: "Downloads" },
-        { href: "proxy.html", label: "Proxy" },
+        { href: "#/", label: "Home" },
+        { href: "#/search", label: "Search" },
+        { href: "#/indexers", label: "Indexers" },
+        { href: "#/downloads", label: "Downloads" },
     ];
 
     connectedCallback() {
-        const current = this.currentPage();
+        this.render();
+        this.onHashChange = () => this.render();
+        window.addEventListener("hashchange", this.onHashChange);
+    }
+
+    disconnectedCallback() {
+        window.removeEventListener("hashchange", this.onHashChange);
+    }
+
+    render() {
+        const current = window.location.hash || "#/";
 
         const items = Sidebar.PAGES.map((page) => {
-            const active = page.href === current ? " active" : "";
+            const active = Sidebar.isActive(page.href, current) ? " active" : "";
 
             return `
                 <li class="nav-item">
@@ -26,7 +33,7 @@ class Sidebar extends HTMLElement {
 
         this.innerHTML = `
             <nav id="sidebar" class="d-flex flex-column h-100 py-3 px-2">
-                <a class="sidebar-brand mb-3 px-1" href="index.html">FMHY Downloader</a>
+                <a class="sidebar-brand mb-3 px-1" href="#/">FMHY Downloader</a>
                 <ul class="nav nav-pills flex-column gap-1">
                     ${items}
                 </ul>
@@ -34,11 +41,12 @@ class Sidebar extends HTMLElement {
         `;
     }
 
-    currentPage() {
-        const path = window.location.pathname;
-        const file = path.substring(path.lastIndexOf("/") + 1);
+    static isActive(href, current) {
+        if (href === "#/") {
+            return current === "#/" || current === "#" || current === "";
+        }
 
-        return file === "" ? "index.html" : file;
+        return current === href || current.startsWith(`${href}/`);
     }
 }
 
