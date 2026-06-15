@@ -139,7 +139,8 @@ RUN mkdir -p "/app/.config/chromium/Crash Reports/pending"
 
 EXPOSE ${WEBUI_PORT}
 
-# HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 CMD curl -f http://localhost:8080/health || exit 1
+# Pass only when the body reports "healthy" 
+HEALTHCHECK --interval=20s --timeout=5s --start-period=10s --retries=3 CMD curl -s "http://localhost:${WEBUI_PORT}/health" | grep -q '"health":"healthy"' || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/app/fmhy_downloader"]

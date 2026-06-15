@@ -2,14 +2,16 @@ use std::sync::Arc;
 
 use serde_json::json;
 use thiserror::Error;
+use url::Url;
 use axum::{routing, response};
-use axum::http::{header, HeaderValue};
+use axum::http::{header, HeaderValue, StatusCode};
 use tower_http::services::ServeDir;
 use tower_http::set_header::SetResponseHeaderLayer;
 
 use super::api;
 use crate::env;
 use crate::config;
+use crate::request;
 
 /////////////////////////////////////////////////////
 // RouteError
@@ -125,9 +127,34 @@ impl Router {
         router
     }
 
-    async fn health() -> response::Json<serde_json::Value> {
-        response::Json(json!({
-            "health": "healthy"
-        }))
+    async fn health() -> (StatusCode, response::Json<serde_json::Value>) {
+        trace!("Got /health request.");
+
+        let response = {
+            if Self::check_internet().await.is_err() {
+                response::Json(json!({ "health": "no internet" }))
+            } else {
+                response::Json(json!({ "health": "healthy" }))
+            }
+        };
+
+        trace!("Responding with: {}", response.to_string());
+        (StatusCode::OK, response)
+    }
+
+    async fn check_internet() -> Result<(), request::RequestError> {
+        const CONNECTIVITY_CHECK_URL: &str = "https://www.google.com";
+
+        let url = Url::parse(CONNECTIVITY_CHECK_URL).unwrap();
+
+        let specification = request::RequesterSpecification {
+            connect_timeout: 5,
+            max_timeout: 5,
+            ..request::RequesterSpecification::default()
+        };
+        let requester = request::Requester::get_native(specification)?;
+
+        requester.get_bytes(&url, None).await?;
+        Ok(())
     }
 }
