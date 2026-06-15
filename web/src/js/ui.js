@@ -163,25 +163,27 @@ export async function openStreamSearch({ indexers, selected, titleHint, fetcher 
 
     const rows = [];
     const subtitles = [];
-    for (const result of settled) {
+    const statuses = [];
+    settled.forEach((result, index) => {
+        const name = targets[index];
+
         if (result.status !== "fulfilled") {
-            continue;
+            statuses.push({ indexer: name, state: "failed", detail: result.reason?.message || "request failed" });
+            return;
         }
-        const { name, streams } = result.value;
-        for (const stream of streams.streams || []) {
+
+        const { streams } = result.value;
+        const streamList = streams.streams || [];
+        for (const stream of streamList) {
             rows.push({ indexer: name, stream });
         }
         for (const subtitle of streams.subtitles || []) {
             subtitles.push({ indexer: name, subtitle });
         }
-    }
+        statuses.push({ indexer: name, state: streamList.length ? "ok" : "empty", detail: `${streamList.length} stream(s)` });
+    });
 
-    if (rows.length === 0) {
-        body.innerHTML = `<div class="alert alert-warning mb-0">No streams found.</div>`;
-        return;
-    }
-
-    body.innerHTML = renderStreamTable(rows, subtitles);
+    body.innerHTML = renderStreamTable(rows, subtitles, statuses);
     body.querySelectorAll("[data-stream-row]").forEach((button) => {
         button.addEventListener("click", () => {
             const { indexer, stream } = rows[Number(button.dataset.streamRow)];
@@ -190,7 +192,13 @@ export async function openStreamSearch({ indexers, selected, titleHint, fetcher 
     });
 }
 
-function renderStreamTable(rows, subtitles) {
+function renderStreamTable(rows, subtitles, statuses) {
+    const statusBlock = renderStatusBlock(statuses);
+
+    if (rows.length === 0) {
+        return `${statusBlock}<div class="alert alert-warning mb-0">No streams found.</div>`;
+    }
+
     const streamRows = rows.map((row, index) => `
         <tr>
             <td>${escapeHtml(row.stream.quality || "unknown")}</td>
@@ -206,6 +214,7 @@ function renderStreamTable(rows, subtitles) {
         </ul>`;
 
     return `
+        ${statusBlock}
         <div class="table-responsive">
             <table class="table table-dark table-hover align-middle">
                 <thead><tr><th>Quality</th><th>Indexer</th><th>URL</th><th></th></tr></thead>
@@ -213,6 +222,25 @@ function renderStreamTable(rows, subtitles) {
             </table>
         </div>
         ${subtitleBlock}`;
+}
+
+const STATUS_BADGE = {
+    ok: "text-bg-success",
+    empty: "text-bg-secondary",
+    failed: "text-bg-danger",
+};
+
+function renderStatusBlock(statuses) {
+    if (!statuses || statuses.length <= 1) {
+        return "";
+    }
+
+    const badges = statuses.map((status) => `
+        <span class="badge ${STATUS_BADGE[status.state]} d-inline-flex gap-1" title="${escapeAttr(status.detail)}">
+            ${escapeHtml(status.indexer)}<span class="opacity-75">${escapeHtml(status.detail)}</span>
+        </span>`).join("");
+
+    return `<div class="d-flex flex-wrap gap-2 mb-3">${badges}</div>`;
 }
 
 export function openDownloadModal({ indexer, stream, titleHint }) {
