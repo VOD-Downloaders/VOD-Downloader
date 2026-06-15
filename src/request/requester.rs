@@ -20,8 +20,6 @@ pub enum RequestError {
     RequestFailed(String),
     #[error("Failed to read response's bytes with error: {0}")]
     FailedToReadBytes(String),
-    #[error("Failed to response's bytes to a string.")]
-    FailedToConvertBytesToString,
 }
 
 /////////////////////////////////////////////////////
@@ -72,7 +70,7 @@ impl Requester {
         Ok(Requester::Flaresolvedd(FlaresolveddRequester::new_native(specification, flaressolverr_url, begin_url)?))
     }
 
-    pub async fn get_bytes(&self, url: &Url, headers: Option<HeaderMap>) -> Result<Vec<u8>, RequestError> {
+    pub async fn get_file_contents(&self, url: &Url, headers: Option<HeaderMap>) -> Result<Vec<u8>, RequestError> {
         let mut final_headers: HeaderMap = self.get_specification().headers.clone();
         for (key, val) in &headers.unwrap_or_default() {
             final_headers.insert(key, val.clone());
@@ -81,24 +79,9 @@ impl Requester {
         trace!("Retrieving file contents from \"{}\", user_agent: {}, headers: {:?}", url, self.get_specification().user_agent, final_headers);
 
         match self {
-            Requester::Native(instance) => instance.get_bytes(url, final_headers).await,
-            Requester::Curl(instance) => instance.get_bytes(url, final_headers).await,
-            Requester::Flaresolvedd(instance) => instance.get_bytes(url, final_headers).await,
-        }
-    }
-
-    pub async fn get_string(&self, url: &Url, headers: Option<HeaderMap>) -> Result<String, RequestError> {
-        let mut final_headers: HeaderMap = self.get_specification().headers.clone();
-        for (key, val) in &headers.unwrap_or_default() {
-            final_headers.insert(key, val.clone());
-        }
-
-        trace!("Retrieving file contents from \"{}\", user_agent: {}, headers: {:?}", url, self.get_specification().user_agent, final_headers);
-
-        match self {
-            Requester::Native(instance) => instance.get_string(url, final_headers).await,
-            Requester::Curl(instance) => instance.get_string(url, final_headers).await,
-            Requester::Flaresolvedd(instance) => instance.get_string(url, final_headers).await,
+            Requester::Native(instance) => instance.get_file_contents(url, final_headers).await,
+            Requester::Curl(instance) => instance.get_file_contents(url, final_headers).await,
+            Requester::Flaresolvedd(instance) => instance.get_file_contents(url, final_headers).await,
         }
     }
 

@@ -22,7 +22,8 @@ pub const INDEXER_SPECIFICATIONS_DIR: &str = "/config/indexers/specifications/";
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexerSpecification {
     pub name: String,
-    pub servers: Vec<String>,
+    pub url: Url,
+    pub mirrors: Vec<Url>,
 
     pub uses_cloudflare: bool,
 
@@ -35,7 +36,7 @@ pub struct IndexerSpecification {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Indexer {
     pub name: String,
-    pub server: String,
+    pub url: Url,
     pub uses_cloudflare: bool,
 
     pub download: DownloadSpecification,
