@@ -1,23 +1,24 @@
 services:
   fmhy_downloader:
-    image: ghcr.io/vod-downloaders/fmhy-downloader:latest
+    build: .
     container_name: fmhy_downloader
     volumes:
       - ./config:/config
       - ./output:/output
     environment:
-      - LOG_LEVEL=info
+      - LOG_LEVEL=debug
       - BRIDGE_URL=http://fmhy_bridge:3000/
       - FLARESOLVERR_URL=http://flaresolverr:8191/v1 # Optional
     ports:
       - 8080:8080
+    # HEALTHCHECK is in Dockerfile
     restart: unless-stopped
 
   fmhy_bridge:
     image: ghcr.io/ggjorven/fmhy-bridge:latest
     container_name: fmhy_bridge
     environment:
-      - LOG_LEVEL=info
+      - LOG_LEVEL=debug
     restart: unless-stopped
 
   flaresolverr: # Optional
