@@ -2,6 +2,25 @@
 
 Contributions are highly appreciated (especially to the [fronted](#fronted-html-css-js) and [documentation](#documentation-markdown)).  
 
+## Reporting issues
+
+Open an issue using one of the templates:
+
+- [Bug report](./.github/ISSUE_TEMPLATE/BUG-REPORT.yml)
+- [Feature request](./.github/ISSUE_TEMPLATE/FEATURE-REQUEST.yml)
+
+GitHub presents these automatically when you click **New issue**.
+
+## Opening a pull request
+
+Fill in the pull request template that matches your target branch. GitHub does not show it
+automatically when multiple templates exist, so manually copy its markdown contents: 
+
+- Targeting `dev`: [`dev.md`](./.github/PULL_REQUEST_TEMPLATE/dev.md)
+- Targeting `main`: [`main.md`](./.github/PULL_REQUEST_TEMPLATE/main.md)
+
+Complete the checklist in the template before requesting a merge.
+
 ## Backend (Rust, Docker)
 
 To contribute to the backend follow these steps:
