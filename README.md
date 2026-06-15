@@ -79,6 +79,8 @@ The container is configured through environment variables:
 | `FLARESOLVERR_URL` | - | FlareSolverr endpoint (may be empty) |
 | `WEBUI_PORT` | `8080` | Port the WebUI/API listens on |
 
+For more configuration options check out [CONFIGURATION.md](./doc/CONFIGURATION.md).
+
 ## Usage
 
 The WebUI is served on [`http://localhost:8080`](http://localhost:8080). 
