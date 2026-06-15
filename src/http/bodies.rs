@@ -4,9 +4,11 @@ use axum::{
     http::StatusCode,
 };
 
-use super::super::config::Indexer;
-use super::super::config::IndexerSpecification;
-use super::super::streams::Stream;
+use crate::config::Indexer;
+use crate::config::IndexerSpecification;
+use crate::search::streams::Stream;
+use crate::search::streams::Streams;
+use crate::search::info::*;
 
 /////////////////////////////////////////////////////
 // Requests
@@ -22,16 +24,24 @@ pub struct DeleteIndexerRequest {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct StreamsRequest {
-    pub indexer_name: String,
-    pub input_url: String,
+pub struct StartDownloadRequest {
+    pub stream: Stream,
+    pub output_file: String,
+}
+
+/////////////////////////////////////////////////////
+// Queries
+/////////////////////////////////////////////////////
+#[derive(Debug, Deserialize)]
+pub struct SearchMovieQuery {
+    pub name: String,
+    pub page: i32,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct DownloadRequest {
-    pub indexer_name: String,
-    pub stream: Stream,
-    pub output_file: String,
+pub struct SearchSeriesQuery {
+    pub name: String,
+    pub page: i32,
 }
 
 /////////////////////////////////////////////////////
@@ -109,26 +119,156 @@ impl IntoResponse for IndexerSpecificationsResponse {
 }
 
 #[derive(Serialize)]
-pub struct StreamsResponse {
+pub struct SearchMovieResponse {
     #[serde(skip)]
     pub status: StatusCode,
-    pub streams: Vec<Stream>,
+    pub response: MoviePageResultBody,
 }
 
-impl IntoResponse for StreamsResponse {
+impl IntoResponse for SearchMovieResponse {
     fn into_response(self) -> response::Response {
-        (self.status, response::Json(self)).into_response()
+        (self.status, response::Json(self.response)).into_response()
     }
 }
 
 #[derive(Serialize)]
-pub struct DownloadResponse {
+pub struct SearchSeriesResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub response: SeriesPageResultBody,
+}
+
+impl IntoResponse for SearchSeriesResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self.response)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct GetMovieResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub response: FullMovieBody,
+}
+
+impl IntoResponse for GetMovieResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self.response)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct GetSeriesResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub response: FullSeriesBody,
+}
+
+impl IntoResponse for GetSeriesResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self.response)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct GetSeasonResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub response: FullSeasonBody,
+}
+
+impl IntoResponse for GetSeasonResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self.response)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct GetEpisodeResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub response: FullEpisodeBody,
+}
+
+impl IntoResponse for GetEpisodeResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self.response)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct GetMovieExternalIDsResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub response: MovieExternalIDsBody,
+}
+
+impl IntoResponse for GetMovieExternalIDsResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self.response)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct GetSeriesExternalIDsResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub response: SeriesExternalIDsBody,
+}
+
+impl IntoResponse for GetSeriesExternalIDsResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self.response)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct GetSeasonExternalIDsResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub response: SeasonExternalIDsBody,
+}
+
+impl IntoResponse for GetSeasonExternalIDsResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self.response)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct GetEpisodeExternalIDsResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub response: EpisodeExternalIDsBody,
+}
+
+impl IntoResponse for GetEpisodeExternalIDsResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self.response)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct StreamsResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub streams: Streams,
+}
+
+impl IntoResponse for StreamsResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self.streams)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct StartDownloadResponse {
     #[serde(skip)]
     pub status: StatusCode,
     pub id: u32,
 }
 
-impl IntoResponse for DownloadResponse {
+impl IntoResponse for StartDownloadResponse {
     fn into_response(self) -> response::Response {
         (self.status, response::Json(self)).into_response()
     }
