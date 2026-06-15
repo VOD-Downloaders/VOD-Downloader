@@ -31,20 +31,15 @@ services:
       - ./output:/output
     environment:
       - LOG_LEVEL=info
-      - BRIDGE_URL=http://fmhy_bridge:3000/
-      - FLARESOLVERR_URL=http://flaresolverr:8191/v1 # Optional
+      - FLARESOLVERR_URL=http://flaresolverr:8191/v1
     ports:
       - 8080:8080
+    depends_on:
+      flaresolverr:
+        condition: service_healthy
     restart: unless-stopped
 
-  fmhy_bridge:
-    image: ghcr.io/ggjorven/fmhy-bridge:latest
-    container_name: fmhy_bridge
-    environment:
-      - LOG_LEVEL=info
-    restart: unless-stopped
-
-  flaresolverr: # Optional
+  flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
     environment:
@@ -65,19 +60,8 @@ docker compose up -d
 ```
 
 > [!NOTE]
-> `flaresolverr` is only required for Cloudflare-protected sites. If you don't need it, remove the service
-> and the `FLARESOLVERR_URL` environment variable.
-
-## Configuration
-
-The container is configured through environment variables:
-
-| Variable | Default | Description |
-|---|---|---|
-| `LOG_LEVEL` | `info` | Log verbosity: `debug` / `info` / `warning` / `error` |
-| `BRIDGE_URL` | `http://fmhy_bridge:3000/` | FMHY Bridge container url |
-| `FLARESOLVERR_URL` | - | FlareSolverr endpoint (may be empty) |
-| `WEBUI_PORT` | `8080` | Port the WebUI/API listens on |
+> `flaresolverr` is only required for Cloudflare-protected sites. If you don't need it, remove the service,
+> the `depends_on` block, and the `FLARESOLVERR_URL` environment variable.
 
 ## Usage
 
@@ -89,30 +73,30 @@ Use the sidebar to navigate between pages:
 2. **Streams** – Shows available streams for selected episode or movie.
 3. **Downloads** – Shows the downloads you've started. Finished files land in the `./output` directory.
 
+### Configuration
+
+The container is configured through environment variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `LOG_LEVEL` | `info` | Log verbosity: `debug` / `info` / `warning` / `error` |
+| `WEBUI_PORT` | `8080` | Port the WebUI/API listens on |
+| `FLARESOLVERR_URL` | - | FlareSolverr endpoint (may be empty) |
+
 ## API
 
 The docker container exposes an HTTP server with callable API functions, listed below:
 
-| Type | Endpoint | Description | Query | Input | Output |
-|---|---|---|---|---|---|
-| `GET` | `/health` | Healthcheck endpoint | - | - | `{ health }` |
-| `GET` | `/api/indexers` | Retrieve active indexers | - | - | `{ indexers }` |
-| `POST` | `/api/indexers/create` | Create an active indexer from a specification | - | `{ indexer }` | - |
-| `POST` | `/api/indexers/delete` | Delete an active indexer | - | `{ name }` | - |
-| `GET` | `/api/indexers/specifications` | Retrieve usable indexer specifications | - | - | `{ indexers }` |
-| `POST` | `/api/indexers/specifications/refresh` | Refetch indexer specifications from GitHub | - | - | `{ indexers }` |
-| `GET` | `/api/info/movie/search` | Search for a movie | `name, page` | - | `{ response }` |
-| `GET` | `/api/info/series/search` | Search for a series | `name, page` | - | `{ response }` |
-| `GET` | `/api/info/movie/{movie_id}` | Retrieve movie information | - | - | `{ response }` |
-| `GET` | `/api/info/movie/{movie_id}/external_ids` | Retrieve external IDs for a movie | - | - | `{ response }` |
-| `GET` | `/api/info/series/{series_id}` | Retrieve series information | - | - | `{ response }` |
-| `GET` | `/api/info/series/{series_id}/external_ids` | Retrieve external IDs for a series | - | - | `{ response }` |
-| `GET` | `/api/info/series/{series_id}/season/{season_number}` | Retrieve season information | - | - | `{ response }` |
-| `GET` | `/api/info/series/{series_id}/season/{season_number}/external_ids` | Retrieve external IDs for a season | - | - | `{ response }` |
-| `GET` | `/api/info/series/{series_id}/season/{season_number}/episode/{episode_number}` | Retrieve episode information | - | - | `{ response }` |
-| `GET` | `/api/info/series/{series_id}/season/{season_number}/episode/{episode_number}/external_ids` | Retrieve external IDs for an episode | - | - | `{ response }` |
-| `GET` | `/api/streams/indexer/{indexer_name}/movie/{movie_id}` | List available streams for a movie | - | - | `{ streams }` |
-| `GET` | `/api/streams/indexer/{indexer_name}/series/{series_id}/season/{season_number}/episode/{episode_number}` | List available streams for an episode | - | - | `{ streams }` |
+| Type | Endpoint | Description | Input | Output |
+|---|---|---|---|---|
+| `GET` | `/health` | Healthcheck endpoint | - | `{ health }` |
+| `GET` | `/api/indexers` | Retrieve active indexers | - | `{ indexers }` |
+| `POST` | `/api/indexers/create` | Create an active indexer from a specification | `{ indexer }` | - |
+| `POST` | `/api/indexers/delete` | Delete an active indexer | `{ name }` | - |
+| `GET` | `/api/indexers/specifications` | Retrieve usable indexer specifications | - | `{ indexers }` |
+| `POST` | `/api/indexers/specifications/refresh` | Refetch indexer specifications from GitHub | - | `{ indexers }` |
+| `POST` | `/api/streams` | Analyze a URL and list the available streams | `{ indexer_name, input_url }` | `{ streams }` |
+| `POST` | `/api/download` | Start a VOD download | `{ indexer_name, stream, output_file }` | `{ id }` |
 
 ## Contributing
 
@@ -154,8 +138,6 @@ Contributions to the Documentation are highly appreciated, add your files to the
 | [tokio](https://crates.io/crates/tokio) | 1 | MIT | A runtime for writing reliable asynchronous applications |
 | [serde](https://crates.io/crates/serde) | 1 | MIT / Apache-2.0 | Serialization/deserialization framework |
 | [serde_json](https://crates.io/crates/serde_json) | 1 | MIT / Apache-2.0 | JSON parsing for API payloads |
-| [serde_url_params](https://crates.io/crates/serde_url_params) | 0.2 | MIT / Apache-2.0 | JSON parsing for URLs |
-| [dateparser](https://crates.io/crates/dateparser) | 0.3 | MIT | Date parser |
 | [axum](https://crates.io/crates/axum) | 0.8 | MIT | HTTP routing and request-handling |
 | [tower_http](https://crates.io/crates/tower_http) | 0.6 | MIT | Easy web file serving |
 | [base64](https://crates.io/crates/base64) | 0.22 | MIT / Apache-2.0 | Base64 encoder and decoder |

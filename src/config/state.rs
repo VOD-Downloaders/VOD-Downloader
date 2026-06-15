@@ -103,9 +103,4 @@ impl State {
 
         Ok(())
     }
-
-    pub fn get_indexer_by_name(&self, name: &str) -> Option<&Indexer> {
-        trace!("Looking for indexer by name: \"{}\"...", name);
-        self.indexers.iter().find(|item| item.name == name)
-    }
 }
