@@ -7,8 +7,7 @@ mod config;
 mod http;
 mod request;
 mod search;
-mod streams;
-mod download;
+// mod download;
 
 #[derive(Debug, Error)]
 #[error(transparent)]

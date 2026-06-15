@@ -396,6 +396,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a4ae5f15dda3c708c0ade84bfee31ccab44a3da4f88015ed22f63732abe300c8"
 
 [[package]]
+name = "dateparser"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fa7c3b5f25f753dcbf8f77a535166e08cba151529b6df9be966984053a68cf39"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "regex",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -467,7 +478,7 @@ checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
 
 [[package]]
 name = "fmhy_downloader"
-version = "0.1.0-alpha.3"
+version = "0.2.0-alpha.1"
 dependencies = [
  "async-trait",
  "axum",
@@ -475,11 +486,13 @@ dependencies = [
  "chromiumoxide",
  "chrono",
  "colored",
+ "dateparser",
  "futures",
  "rand 0.10.1",
  "reqwest",
  "serde",
  "serde_json",
+ "serde_url_params",
  "symphonia",
  "thiserror",
  "tokio",
@@ -1688,6 +1701,16 @@ dependencies = [
  "itoa",
  "serde",
  "serde_core",
+]
+
+[[package]]
+name = "serde_url_params"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c43307d0640738af32fe8d01e47119bc0fc8a686be470a44a586caff76dfb34"
+dependencies = [
+ "serde",
+ "url",
 ]
 
 [[package]]

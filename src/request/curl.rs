@@ -20,7 +20,7 @@ impl CurlRequester {
         })
     }
 
-    pub async fn get_file_contents(&self, url: &Url, headers: HeaderMap) -> Result<Vec<u8>, RequestError> {
+    pub async fn get_bytes(&self, url: &Url, headers: HeaderMap) -> Result<Vec<u8>, RequestError> {
         let connect_timeout_str = self.specification.connect_timeout.to_string();
         let max_timeout_str = self.specification.max_timeout.to_string();
 
@@ -49,7 +49,7 @@ impl CurlRequester {
                 url.as_str(),
             ]);
 
-        trace!("Full get_file_contents command is: {:?}", command);
+        trace!("Full get_bytes/get_string command is: {:?}", command);
 
         let output = command
             .output()
@@ -61,6 +61,11 @@ impl CurlRequester {
         }
 
         Ok(output.stdout)
+    }
+
+    pub async fn get_string(&self, url: &Url, headers: HeaderMap) -> Result<String, RequestError> {
+        let bytes = self.get_bytes(url, headers).await?;
+        String::from_utf8(bytes).map_err(|_error| RequestError::FailedToConvertBytesToString)
     }
 
     pub fn get_specification(&self) -> &RequesterSpecification {

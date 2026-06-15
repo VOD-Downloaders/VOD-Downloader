@@ -1,0 +1,29 @@
+use url::Url;
+use serde::{Serialize, Deserialize};
+
+/////////////////////////////////////////////////////
+// Stream
+/////////////////////////////////////////////////////
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Stream {
+    pub url: Url,
+    pub quality: String,
+}
+
+/////////////////////////////////////////////////////
+// Subtitle
+/////////////////////////////////////////////////////
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Subtitle {
+    pub url: Url,
+    pub language: String,
+}
+
+/////////////////////////////////////////////////////
+// Streams
+/////////////////////////////////////////////////////
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Streams {
+    pub streams: Vec<Stream>,
+    pub subtitles: Vec<Subtitle>,
+}

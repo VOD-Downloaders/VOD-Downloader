@@ -8,8 +8,8 @@ use tower_http::services::ServeDir;
 use tower_http::set_header::SetResponseHeaderLayer;
 
 use super::api;
-use super::super::env;
-use super::super::config;
+use crate::env;
+use crate::config;
 
 /////////////////////////////////////////////////////
 // RouteError
@@ -87,13 +87,30 @@ impl Router {
         let router = axum::Router::new()
             // API calls
             .route("/health", routing::get(Self::health))
+            // Indexers
             .route("/api/indexers", routing::get(api::get_indexers))
             .route("/api/indexers/create", routing::post(api::post_create_indexer))
             .route("/api/indexers/delete", routing::post(api::post_delete_indexer))
             .route("/api/indexers/specifications", routing::get(api::get_indexer_specifications))
             .route("/api/indexers/specifications/refresh", routing::post(api::post_refresh_indexer_specifications))
-            .route("/api/streams", routing::post(api::post_streams))
-            .route("/api/download", routing::post(api::post_download))
+            // Information
+            .route("/api/info/movie/search", routing::get(api::get_search_movie))
+            .route("/api/info/series/search", routing::get(api::get_search_series))
+            .route("/api/info/movie/{movie_id}", routing::get(api::get_movie))
+            .route("/api/info/movie/{movie_id}/external_ids", routing::get(api::get_movie_external_ids))
+            .route("/api/info/series/{series_id}", routing::get(api::get_series))
+            .route("/api/info/series/{series_id}/external_ids", routing::get(api::get_series_external_ids))
+            .route("/api/info/series/{series_id}/season/{season_number}", routing::get(api::get_season))
+            .route("/api/info/series/{series_id}/season/{season_number}/external_ids", routing::get(api::get_season_external_ids))
+            .route("/api/info/series/{series_id}/season/{season_number}/episode/{episode_number}", routing::get(api::get_episode))
+            .route(
+                "/api/info/series/{series_id}/season/{season_number}/episode/{episode_number}/external_ids",
+                routing::get(api::get_episode_external_ids),
+            )
+            // Streams
+            .route("/api/streams/indexer/{indexer_name}/movie/{movie_id}", routing::get(api::get_streams_movie))
+            .route("/api/streams/indexer/{indexer_name}/series/{series_id}/season/{season_number}/episode/{episode_number}", routing::get(api::get_streams_episode))
+            // Download // TODO: ...
 
             // HTML, CSS, JS
             .fallback_service(web_source_service)

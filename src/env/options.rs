@@ -3,13 +3,17 @@ use std::env;
 use thiserror::Error;
 use url::Url;
 
-use super::super::logging::LogLevel;
+use crate::logging::LogLevel;
 
 /////////////////////////////////////////////////////
 // EnvError
 /////////////////////////////////////////////////////
 #[derive(Debug, Clone, Error)]
 pub enum EnvError {
+    #[error("BRIDGE_URL is not set.")]
+    NoBridgeUrl,
+    #[error("BRIDGE_URL is set to an invalid url \"{url}\", error: {error}")]
+    InvalidBridgeUrl { url: String, error: url::ParseError },
     #[error("FLARESOLVERR_URL is set to an invalid url \"{url}\", error: {error}")]
     InvalidFlaresolverrUrl { url: String, error: url::ParseError },
     #[error("LOG_LEVEL contains invalid data (must be \"debug\", \"info\", \"warning\" or \"error\". Received: {log_level}")]
@@ -24,6 +28,7 @@ pub enum EnvError {
 #[derive(Debug, Clone)]
 pub struct EnvOptions {
     pub log_level: LogLevel,
+    pub bridge_url: Url,
     pub flaresolverr_url: Option<Url>,
     pub webui_port: u16,
 }
@@ -32,6 +37,7 @@ impl Default for EnvOptions {
     fn default() -> Self {
         Self {
             log_level: LogLevel::Info,
+            bridge_url: Url::parse("http://fmhy_bridge:3000/").unwrap(),
             flaresolverr_url: None,
             webui_port: 8080,
         }
@@ -43,11 +49,13 @@ impl EnvOptions {
         let default = EnvOptions::default();
 
         let log_level = Self::parse_log_level()?;
+        let bridge_url = Self::parse_bridge_url()?;
         let flaresolverr_url = Self::parse_flaresolverr_url()?;
         let webui_port = Self::parse_webui_port()?;
 
         Ok(Self {
             log_level: log_level.unwrap_or(default.log_level),
+            bridge_url: bridge_url,
             flaresolverr_url: flaresolverr_url,
             webui_port: webui_port.unwrap_or(default.webui_port),
         })
@@ -65,6 +73,19 @@ impl EnvOptions {
             "error" => Ok(Some(LogLevel::Error)),
             _ => Err(EnvError::InvalidLogLevel { log_level: log_level }),
         }
+    }
+
+    fn parse_bridge_url() -> Result<Url, EnvError> {
+        let Ok(bridge_url) = env::var("BRIDGE_URL") else {
+            return Err(EnvError::NoBridgeUrl);
+        };
+
+        let bridge_url = Url::parse(bridge_url.as_str()).map_err(|error| EnvError::InvalidBridgeUrl {
+            url: bridge_url,
+            error: error,
+        })?;
+
+        Ok(bridge_url)
     }
 
     fn parse_flaresolverr_url() -> Result<Option<Url>, EnvError> {
