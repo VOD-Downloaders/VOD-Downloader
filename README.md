@@ -60,7 +60,7 @@ services:
 
 Then start it:
 
-```bash
+```sh
 docker compose up -d
 ```
 
@@ -83,13 +83,15 @@ For more configuration options check out [CONFIGURATION.md](./doc/CONFIGURATION.
 
 ## Usage
 
-The WebUI is served on [`http://localhost:8080`](http://localhost:8080). 
+The WebUI is served on [`http://localhost:8080`](http://localhost:8080) (or the port set with `WEBUI_PORT`). Use the sidebar to navigate. A typical run:
 
-Use the sidebar to navigate between pages:
+1. **Indexers** - Create an indexer from a specification and pick a server. Specifications are fetched from the [VOD-Downloaders/FMHY-Indexers](https://github.com/VOD-Downloaders/FMHY-Indexers)
+   repository. Hit **Refresh specifications** to pull the latest.
+2. **Search** - Search TMDB for a movie or series and open its details page.
+3. **Streams** - On the details page, pick an indexer to list available streams, then start a download. Finished files land in the `/output` directory.
+4. **Downloads** - Shows the downloads you've started from this browser.
 
-1. **Search** – // TODO: Search for a series
-2. **Streams** – Shows available streams for selected episode or movie.
-3. **Downloads** – Shows the downloads you've started. Finished files land in the `./output` directory.
+For a full walkthrough see [GETTING-STARTED.md](./doc/GETTING-STARTED.md).
 
 ## Contributing
 
