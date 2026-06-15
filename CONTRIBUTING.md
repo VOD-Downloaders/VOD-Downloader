@@ -1,13 +1,14 @@
 # Contributing
 
-Contributions are highly appreciated (especially to the [fronted](#fronted-html-css-js) and [documentation](#documentation-markdown)).  
+Contributions are highly appreciated (especially to the [fronted](#fronted-html-css-js) and [documentation](#documentation-markdown)). Please follow the rules and guidelines listed below to make the review proces easier and get your changes merged faster!
 
 ## Reporting issues
 
 Open an issue using one of the templates:
 
-- [Bug report](./.github/ISSUE_TEMPLATE/BUG-REPORT.yml)
-- [Feature request](./.github/ISSUE_TEMPLATE/FEATURE-REQUEST.yml)
+- [Bug report](https://github.com/VOD-Downloaders/FMHY-Downloader/issues/new?template=BUG-REPORT.yml)
+- [Feature request](https://github.com/VOD-Downloaders/FMHY-Downloader/issues/new?template=FEATURE-REQUEST.yml)
+- [Other](https://github.com/VOD-Downloaders/FMHY-Downloader/issues/new?template=BLANK_ISSUE)
 
 GitHub presents these automatically when you click **New issue**.
 
