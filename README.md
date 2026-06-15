@@ -31,20 +31,15 @@ services:
       - ./output:/output
     environment:
       - LOG_LEVEL=info
-      - BRIDGE_URL=http://fmhy_bridge:3000/
-      - FLARESOLVERR_URL=http://flaresolverr:8191/v1 # Optional
+      - FLARESOLVERR_URL=http://flaresolverr:8191/v1
     ports:
       - 8080:8080
+    depends_on:
+      flaresolverr:
+        condition: service_healthy
     restart: unless-stopped
 
-  fmhy_bridge:
-    image: ghcr.io/ggjorven/fmhy-bridge:latest
-    container_name: fmhy_bridge
-    environment:
-      - LOG_LEVEL=info
-    restart: unless-stopped
-
-  flaresolverr: # Optional
+  flaresolverr:
     image: ghcr.io/flaresolverr/flaresolverr:latest
     container_name: flaresolverr
     environment:
@@ -65,19 +60,8 @@ docker compose up -d
 ```
 
 > [!NOTE]
-> `flaresolverr` is only required for Cloudflare-protected sites. If you don't need it, remove the service
-> and the `FLARESOLVERR_URL` environment variable.
-
-## Configuration
-
-The container is configured through environment variables:
-
-| Variable | Default | Description |
-|---|---|---|
-| `LOG_LEVEL` | `info` | Log verbosity: `debug` / `info` / `warning` / `error` |
-| `BRIDGE_URL` | `http://fmhy_bridge:3000/` | FMHY Bridge container url |
-| `FLARESOLVERR_URL` | - | FlareSolverr endpoint (may be empty) |
-| `WEBUI_PORT` | `8080` | Port the WebUI/API listens on |
+> `flaresolverr` is only required for Cloudflare-protected sites. If you don't need it, remove the service,
+> the `depends_on` block, and the `FLARESOLVERR_URL` environment variable.
 
 For more configuration options check out [CONFIGURATION.md](./doc/CONFIGURATION.md).
 

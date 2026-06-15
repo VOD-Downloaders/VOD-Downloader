@@ -25,12 +25,12 @@ pub enum ParseError {
 /////////////////////////////////////////////////////
 #[derive(Debug)]
 pub enum M3UResult {
-    Master(HashMap<String, Url>),
+    Master(HashMap<(u32, u32), Url>),
     Index(Vec<String>),
 }
 
 impl M3UResult {
-    pub const DEFAULT_RESOLUTION: &str = "1080x720";
+    pub const DEFAULT_RESOLUTION: (u32, u32) = (1080, 720);
 }
 
 /////////////////////////////////////////////////////
@@ -68,10 +68,27 @@ fn parse_master_playlist(contents: &str) -> Result<M3UResult, ParseError> {
 
                 if let Some(resolution_attribute) = resolution_attribute {
                     let dimensions = resolution_attribute.split('=').nth(1).ok_or(ParseError::InvalidResolutionAttribute)?;
-                    dimensions.to_string()
+
+                    let mut parts = dimensions.split('x');
+                    let width = parts
+                        .next()
+                        .ok_or(ParseError::FailedToParseResolution)?
+                        .parse::<u32>()
+                        .map_err(|_error| ParseError::FailedToParseResolution)?;
+                    let height = parts
+                        .next()
+                        .ok_or(ParseError::FailedToParseResolution)?
+                        .parse::<u32>()
+                        .map_err(|_error| ParseError::FailedToParseResolution)?;
+
+                    (width, height)
                 } else {
-                    trace!("No RESOLUTION found in master file, defaulting to {}...", M3UResult::DEFAULT_RESOLUTION);
-                    M3UResult::DEFAULT_RESOLUTION.to_string()
+                    trace!(
+                        "No RESOLUTION found in master file, defaulting to ({}, {})...",
+                        M3UResult::DEFAULT_RESOLUTION.0,
+                        M3UResult::DEFAULT_RESOLUTION.1
+                    );
+                    M3UResult::DEFAULT_RESOLUTION
                 }
             };
 
