@@ -148,7 +148,7 @@ pub async fn write_indexer_to_file(indexer: &Indexer, file: &Path) -> Result<(),
             WriteIndexerError::FailedToOpenFile(file.to_path_buf(), error)
         })?;
 
-    let json = serde_json::to_string(indexer).map_err(|_error| WriteIndexerError::UnableToConvertToJson)?;
+    let json = serde_json::to_string_pretty(indexer).map_err(|_error| WriteIndexerError::UnableToConvertToJson)?;
 
     output_file
         .write_all(json.as_bytes())
