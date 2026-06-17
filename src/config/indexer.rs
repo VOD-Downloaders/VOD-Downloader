@@ -162,6 +162,7 @@ pub async fn load_indexers() -> Vec<Indexer> {
     if !std::path::PathBuf::from(INDEXERS_DIR).exists() {
         if let Err(error) = std::fs::create_dir(INDEXERS_DIR) {
             error!("Failed to create indexers dir at \"{}\" with error: {}", INDEXERS_DIR, error);
+            return Vec::new();
         }
     }
 
@@ -197,6 +198,7 @@ pub async fn load_indexer_specifications() -> Vec<IndexerSpecification> {
     if !std::path::PathBuf::from(INDEXER_SPECIFICATIONS_DIR).exists() {
         if let Err(error) = std::fs::create_dir(INDEXER_SPECIFICATIONS_DIR) {
             error!("Failed to create indexer specifications dir at \"{}\" with error: {}", INDEXER_SPECIFICATIONS_DIR, error);
+            return Vec::new();
         }
     }
 
