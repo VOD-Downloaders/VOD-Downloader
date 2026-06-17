@@ -3,11 +3,9 @@ use std::path::Path;
 use std::path::PathBuf;
 
 use thiserror::Error;
-use url::Url;
 use tokio::fs::OpenOptions;
 
 use crate::config;
-use crate::download::m3u::M3UResult;
 use crate::request;
 use crate::streams::DownloadableStream;
 use crate::streams::DownloadableStreamType;
@@ -19,12 +17,6 @@ use super::m3u;
 /////////////////////////////////////////////////////
 #[derive(Debug, Error)]
 pub enum DownloadError {
-    #[error("Failed to get stream from \"{0}\" due to error: {1}")]
-    FailedToGetStream(Url, request::RequestError),
-    #[error("Failed to parse stream due to error: {0}")]
-    FailedToParseStream(#[from] m3u::ParseError),
-    #[error("M3U does not follow expectations: {0}")]
-    InvalidM3U(String),
     #[error("Failed to open output file \"{file}\" with error: {error}", file = file.display())]
     FailedToOpenOutputFile { file: PathBuf, error: String },
     #[error("Request error: {0}")]

@@ -11,7 +11,6 @@ use futures::TryFutureExt;
 use serde::{Serialize, Deserialize};
 
 use super::VERSION_TAG_MAJOR_MINOR;
-use super::download::*;
 use super::IndexerServer;
 use super::StreamSpecification;
 use super::DownloadSpecification;
