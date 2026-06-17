@@ -4,7 +4,6 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use chrono::Datelike;
 use axum::{
     extract,
     extract::{State, Query, Path},
@@ -14,12 +13,14 @@ use axum::{
 use super::bodies::*;
 use crate::{
     env,
-    search::info::{tmdb_get_episode, tmdb_get_movie, tmdb_get_movie_external_ids, tmdb_get_season, tmdb_get_series, tmdb_get_series_external_ids},
+    search::info::{tmdb_get_episode, tmdb_get_movie, tmdb_get_movie_external_ids, tmdb_get_series, tmdb_get_series_external_ids},
 };
 use crate::config;
 use crate::request;
 use crate::search;
 use crate::download;
+
+const OUTPUT_DIRECTORY: &str = "/output/";
 
 /////////////////////////////////////////////////////
 // State
@@ -402,9 +403,7 @@ pub async fn post_start_download(
         error: format!("Unable to create requester object due to error: {}", error),
     })?;
 
-    // TODO: Maybe a CONST somewhere
-    let output_file = PathBuf::from("/output/").join(PathBuf::from(payload.output_file));
-
+    let output_file = PathBuf::from(OUTPUT_DIRECTORY).join(PathBuf::from(payload.output_file));
     tokio::spawn(async move {
         let result = download::download_stream(&indexer, payload.stream, &requester, output_file.as_path()).await;
 
