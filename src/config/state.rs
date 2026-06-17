@@ -97,7 +97,7 @@ impl State {
             StateError::UnableToOpen(error)
         })?;
 
-        let json = serde_json::to_string(&StateBody::from(self)).map_err(StateError::UnableToConvert)?;
+        let json = serde_json::to_string_pretty(&StateBody::from(self)).map_err(StateError::UnableToConvert)?;
 
         file.write_all(json.as_bytes()).await.map_err(StateError::UnableToWrite)?;
 
