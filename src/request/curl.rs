@@ -37,6 +37,7 @@ impl CurlRequester {
             .args([
                 "--silent",
                 "--fail",
+                "--globoff",
                 "--connect-timeout",
                 connect_timeout_str.as_str(),
                 "--max-time",
