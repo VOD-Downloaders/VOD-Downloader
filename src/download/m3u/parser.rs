@@ -30,7 +30,7 @@ pub enum M3UResult {
 }
 
 impl M3UResult {
-    pub const DEFAULT_RESOLUTION: &str = "1080x720";
+    pub const DEFAULT_RESOLUTION: &str = "1080p";
 }
 
 /////////////////////////////////////////////////////
