@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
 use std::path::PathBuf;
@@ -13,39 +12,13 @@ use serde::{Serialize, Deserialize};
 
 use super::VERSION_TAG_MAJOR_MINOR;
 use super::download::*;
+use super::IndexerServer;
+use super::StreamSpecification;
+use super::DownloadSpecification;
+use super::SearchSpecification;
 
 pub const INDEXERS_DIR: &str = "/config/indexers/";
 pub const INDEXER_SPECIFICATIONS_DIR: &str = "/config/indexers/specifications/";
-
-/////////////////////////////////////////////////////
-// IndexerStreamType
-/////////////////////////////////////////////////////
-#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum IndexerStreamType {
-    Index,
-    Mp4,
-}
-
-/////////////////////////////////////////////////////
-// IndexerServer
-/////////////////////////////////////////////////////
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IndexerServer {
-    pub name: String,
-    pub description: String,
-    pub search_url: Url,
-    pub headers: Option<HashMap<String, String>>,
-}
-
-/////////////////////////////////////////////////////
-// IndexerSearchSettings
-/////////////////////////////////////////////////////
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct IndexerSearchSettings {
-    pub emulate_url: Url,
-    pub headers: HashMap<String, String>,
-}
 
 /////////////////////////////////////////////////////
 // IndexerSpecification
@@ -53,14 +26,13 @@ pub struct IndexerSearchSettings {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexerSpecification {
     pub name: String,
-
-    pub server: IndexerServer,
-    pub search_settings: IndexerSearchSettings,
+    pub server_list: Vec<IndexerServer>,
 
     pub uses_cloudflare: bool,
 
+    pub search: SearchSpecification,
+    pub stream: StreamSpecification,
     pub download: DownloadSpecification,
-    pub stream_type: IndexerStreamType,
 }
 
 /////////////////////////////////////////////////////
@@ -69,14 +41,13 @@ pub struct IndexerSpecification {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Indexer {
     pub name: String,
-
-    pub server_list: Vec<IndexerServer>,
-    pub search_settings: IndexerSearchSettings,
+    pub server: IndexerServer,
 
     pub uses_cloudflare: bool,
 
+    pub search: SearchSpecification,
+    pub stream: StreamSpecification,
     pub download: DownloadSpecification,
-    pub stream_type: IndexerStreamType,
 
     pub based_on: String,
 }

@@ -45,7 +45,7 @@ pub async fn bridge_search_movie_streams(
 ) -> Result<Streams, SearchError> {
     let mut url = bridge_url.clone().join(format!("/api/{}/movie", indexer.based_on).as_str()).unwrap();
     let headers = {
-        let mut headers = indexer.search_settings.headers.clone();
+        let mut headers = indexer.search.headers.clone();
         if let Some(server_headers) = &indexer.server.headers {
             // Make the serverside headers override the global headers
             for (key, value) in server_headers {
@@ -62,7 +62,7 @@ pub async fn bridge_search_movie_streams(
         tmdb_id: tmdb_id,
         imdb_id: imdb_id,
         server_url: indexer.server.search_url.clone(),
-        emulate_url: indexer.search_settings.emulate_url.clone(),
+        emulate_url: indexer.search.emulate_url.clone(),
         headers: headers,
     })
     .unwrap();
@@ -79,7 +79,7 @@ pub async fn bridge_search_episode_streams(
 ) -> Result<Streams, SearchError> {
     let mut url = bridge_url.clone().join(format!("/api/{}/series", indexer.based_on).as_str()).unwrap();
     let headers = {
-        let mut headers = indexer.search_settings.headers.clone();
+        let mut headers = indexer.search.headers.clone();
         if let Some(server_headers) = &indexer.server.headers {
             // Make the serverside headers override the global headers
             for (key, value) in server_headers {
@@ -96,7 +96,7 @@ pub async fn bridge_search_episode_streams(
         tmdb_id: tmdb_id,
         imdb_id: imdb_id,
         server_url: indexer.server.search_url.clone(),
-        emulate_url: indexer.search_settings.emulate_url.clone(),
+        emulate_url: indexer.search.emulate_url.clone(),
         headers: headers,
     })
     .unwrap();
