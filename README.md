@@ -49,12 +49,6 @@ services:
     container_name: flaresolverr
     environment:
       - LOG_LEVEL=info
-    healthcheck:
-      test: sh -c "curl https://www.google.com && curl http://localhost:8191 && curl http://localhost:8191/health"
-      interval: 5s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
     restart: unless-stopped
 ```
 
