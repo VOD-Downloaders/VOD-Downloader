@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::path::Path;
 use std::path::PathBuf;
@@ -17,16 +18,49 @@ pub const INDEXERS_DIR: &str = "/config/indexers/";
 pub const INDEXER_SPECIFICATIONS_DIR: &str = "/config/indexers/specifications/";
 
 /////////////////////////////////////////////////////
+// IndexerStreamType
+/////////////////////////////////////////////////////
+#[derive(Debug, Copy, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum IndexerStreamType {
+    Index,
+    Mp4,
+}
+
+/////////////////////////////////////////////////////
+// IndexerServer
+/////////////////////////////////////////////////////
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndexerServer {
+    pub name: String,
+    pub description: String,
+    pub search_url: Url,
+    pub headers: Option<HashMap<String, String>>,
+}
+
+/////////////////////////////////////////////////////
+// IndexerSearchSettings
+/////////////////////////////////////////////////////
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IndexerSearchSettings {
+    pub emulate_url: Url,
+    pub headers: HashMap<String, String>,
+}
+
+/////////////////////////////////////////////////////
 // IndexerSpecification
 /////////////////////////////////////////////////////
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexerSpecification {
     pub name: String,
-    pub servers: Vec<String>,
+
+    pub server: IndexerServer,
+    pub search_settings: IndexerSearchSettings,
 
     pub uses_cloudflare: bool,
 
     pub download: DownloadSpecification,
+    pub stream_type: IndexerStreamType,
 }
 
 /////////////////////////////////////////////////////
@@ -35,10 +69,14 @@ pub struct IndexerSpecification {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Indexer {
     pub name: String,
-    pub server: String,
+
+    pub server_list: Vec<IndexerServer>,
+    pub search_settings: IndexerSearchSettings,
+
     pub uses_cloudflare: bool,
 
     pub download: DownloadSpecification,
+    pub stream_type: IndexerStreamType,
 
     pub based_on: String,
 }
