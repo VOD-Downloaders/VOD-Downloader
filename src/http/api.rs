@@ -5,7 +5,6 @@ use std::{
 };
 
 use chrono::Datelike;
-use url::Url;
 use axum::{
     extract,
     extract::{State, Query, Path},
@@ -312,13 +311,11 @@ pub async fn get_streams_movie(
     };
 
     let movie_info = tmdb_get_movie(movie_id, &requester).await;
-    let year = dateparser::parse(movie_info.release_date.as_str()).unwrap().year() as u16;
     let external_ids = tmdb_get_movie_external_ids(movie_id, &requester).await;
 
     let streams = search::streams::bridge_search_movie_streams(
         &indexer,
         movie_info.title.as_str(),
-        year,
         movie_info.id,
         external_ids.imdb_id,
         &state.environment.bridge_url,
@@ -358,27 +355,12 @@ pub async fn get_streams_episode(
     };
 
     let series_info = tmdb_get_series(series_id, &requester).await;
-    let season_info = tmdb_get_season(series_id, season_number, &requester).await;
     let episode_info = tmdb_get_episode(series_id, season_number, episode_number, &requester).await;
-    let year = dateparser::parse(
-        episode_info
-            .air_date
-            .unwrap_or(
-                season_info
-                    .air_date
-                    .unwrap_or(series_info.first_air_date.unwrap_or("1970-01-01".to_string())),
-            )
-            .as_str(),
-    )
-    .unwrap()
-    .year() as u16;
     let external_ids = tmdb_get_series_external_ids(series_id, &requester).await;
-    // let external_ids = tmdb_get_episode_external_ids(series_id, season_number, episode_number, &requester).await;
 
     let streams = search::streams::bridge_search_episode_streams(
         &indexer,
         episode_info.name.as_str(),
-        year,
         series_info.id,
         external_ids.imdb_id,
         season_number,
