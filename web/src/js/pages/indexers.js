@@ -6,6 +6,12 @@ import { escapeHtml, escapeAttr, errorAlert, spinner, toast } from "../ui.js";
 let specs = [];
 let indexers = [];
 
+// Template carried into the form for the current edit/create. The non-tunable parts of an indexer
+// (algorithm_name, search, stream, based_on, segment headers) come straight from the chosen
+// specification or the indexer being edited — the form only exposes the server choice, cloudflare
+// flag and download tuning.
+let formBase = null;
+
 export async function render(view) {
     view.innerHTML = spinner("Loading indexers...");
 
@@ -48,7 +54,6 @@ export async function render(view) {
 function formHtml() {
     return `
         <form data-indexer-form>
-            <input type="hidden" name="based_on">
             <div class="mb-3">
                 <label class="form-label" for="spec-select">Based on specification</label>
                 <select class="form-select" id="spec-select" name="spec"></select>
@@ -60,7 +65,13 @@ function formHtml() {
             <div class="mb-3">
                 <label class="form-label" for="indexer-server">Server</label>
                 <select class="form-select" id="indexer-server" name="server"></select>
+                <div class="form-text" data-server-description></div>
             </div>
+            <dl class="row small text-secondary mb-3" data-spec-info hidden>
+                <dt class="col-sm-4">Algorithm</dt><dd class="col-sm-8" data-info-algorithm></dd>
+                <dt class="col-sm-4">Stream type</dt><dd class="col-sm-8" data-info-stream-type></dd>
+                <dt class="col-sm-4">Search URL</dt><dd class="col-sm-8 text-truncate" data-info-search-url></dd>
+            </dl>
             <div class="form-check form-switch mb-3">
                 <input class="form-check-input" type="checkbox" id="indexer-cf" name="uses_cloudflare">
                 <label class="form-check-label" for="indexer-cf">Uses Cloudflare</label>
@@ -85,11 +96,6 @@ function formHtml() {
                     <input type="number" min="0" class="form-control" id="rm-back" name="remove_back_bytes" value="0">
                 </div>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Segment headers</label>
-                <div data-headers></div>
-                <button type="button" class="btn btn-sm btn-outline-light mt-2" data-add-header>Add header</button>
-            </div>
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Save indexer</button>
                 <button type="button" class="btn btn-secondary" data-reset-form>Reset</button>
@@ -97,18 +103,9 @@ function formHtml() {
         </form>`;
 }
 
-function headerRowHtml(key, value) {
-    return `
-        <div class="input-group input-group-sm mb-2" data-header-row>
-            <input class="form-control" placeholder="Header" value="${escapeAttr(key)}" data-header-key>
-            <input class="form-control" placeholder="Value" value="${escapeAttr(value)}" data-header-value>
-            <button class="btn btn-outline-danger" type="button" data-remove-header aria-label="Remove header">&times;</button>
-        </div>`;
-}
-
 function populateSpecSelect(view) {
     const select = view.querySelector("#spec-select");
-    select.innerHTML = `<option value="">— none —</option>`
+    select.innerHTML = `<option value="">— select —</option>`
         + specs.map((spec, index) => `<option value="${index}">${escapeHtml(spec.name)}</option>`).join("");
 
     select.addEventListener("change", () => {
@@ -121,12 +118,20 @@ function populateSpecSelect(view) {
 
 function applySpec(view, spec) {
     const form = view.querySelector("[data-indexer-form]");
-    form.based_on.value = spec.name;
+
+    formBase = {
+        algorithm_name: spec.algorithm_name,
+        search: spec.search,
+        stream: spec.stream,
+        based_on: spec.name,
+        servers: spec.server_list,
+        headers: spec.download.segment_download.headers || {},
+    };
+
     form.name.value = spec.name;
     form.uses_cloudflare.checked = spec.uses_cloudflare;
 
-    const serverSelect = view.querySelector("#indexer-server");
-    serverSelect.innerHTML = spec.servers.map((server) => `<option value="${escapeAttr(server)}">${escapeHtml(server)}</option>`).join("");
+    populateServerSelect(view, spec.server_list, spec.server_list[0]?.name);
 
     const download = spec.download;
     form.segment_timeout.value = download.segment_download.segment_timeout;
@@ -134,13 +139,34 @@ function applySpec(view, spec) {
     form.remove_front_bytes.value = download.segment_post_download.remove_front_bytes;
     form.remove_back_bytes.value = download.segment_post_download.remove_back_bytes;
 
-    setHeaders(view, download.segment_download.headers || {});
+    updateServerInfo(view);
 }
 
-function setHeaders(view, headers) {
-    const container = view.querySelector("[data-headers]");
-    const entries = Object.entries(headers);
-    container.innerHTML = entries.map(([key, value]) => headerRowHtml(key, value)).join("");
+function populateServerSelect(view, servers, selectedName) {
+    const serverSelect = view.querySelector("#indexer-server");
+    serverSelect.innerHTML = servers
+        .map((server, index) => `<option value="${index}">${escapeHtml(server.name)}</option>`)
+        .join("");
+
+    const selectedIndex = servers.findIndex((server) => server.name === selectedName);
+    serverSelect.value = String(selectedIndex >= 0 ? selectedIndex : 0);
+}
+
+function updateServerInfo(view) {
+    if (!formBase) {
+        return;
+    }
+
+    const serverSelect = view.querySelector("#indexer-server");
+    const server = formBase.servers[Number(serverSelect.value)];
+
+    view.querySelector("[data-server-description]").textContent = server?.description || "";
+
+    const info = view.querySelector("[data-spec-info]");
+    info.hidden = false;
+    view.querySelector("[data-info-algorithm]").textContent = formBase.algorithm_name;
+    view.querySelector("[data-info-stream-type]").textContent = formBase.stream.type;
+    view.querySelector("[data-info-search-url]").textContent = server?.search_url || "";
 }
 
 function wireRefresh(view) {
@@ -165,18 +191,8 @@ function wireRefresh(view) {
 
 function wireForm(view) {
     const form = view.querySelector("[data-indexer-form]");
-    const headers = view.querySelector("[data-headers]");
 
-    view.querySelector("[data-add-header]").addEventListener("click", () => {
-        headers.insertAdjacentHTML("beforeend", headerRowHtml("", ""));
-    });
-
-    headers.addEventListener("click", (event) => {
-        const remove = event.target.closest("[data-remove-header]");
-        if (remove) {
-            remove.closest("[data-header-row]").remove();
-        }
-    });
+    view.querySelector("#indexer-server").addEventListener("change", () => updateServerInfo(view));
 
     view.querySelector("[data-reset-form]").addEventListener("click", () => resetForm(view));
 
@@ -185,13 +201,18 @@ function wireForm(view) {
         const errorBox = view.querySelector("[data-form-error]");
         errorBox.innerHTML = "";
 
+        if (!formBase) {
+            errorBox.innerHTML = errorAlert("Pick a specification first.");
+            return;
+        }
+
         const indexer = buildIndexer(view);
         if (!indexer.name) {
             errorBox.innerHTML = errorAlert("Name is required.");
             return;
         }
         if (!indexer.server) {
-            errorBox.innerHTML = errorAlert("A server is required. Pick a specification first.");
+            errorBox.innerHTML = errorAlert("A server is required.");
             return;
         }
 
@@ -209,40 +230,39 @@ function wireForm(view) {
 
 function buildIndexer(view) {
     const form = view.querySelector("[data-indexer-form]");
-    const headers = {};
-    view.querySelectorAll("[data-header-row]").forEach((row) => {
-        const key = row.querySelector("[data-header-key]").value.trim();
-        if (key) {
-            headers[key] = row.querySelector("[data-header-value]").value;
-        }
-    });
+    const serverSelect = view.querySelector("#indexer-server");
+    const server = formBase.servers[Number(serverSelect.value)];
 
     return {
         name: form.name.value.trim(),
-        server: form.server.value,
+        algorithm_name: formBase.algorithm_name,
+        server,
         uses_cloudflare: form.uses_cloudflare.checked,
-        based_on: form.based_on.value,
+        search: formBase.search,
+        stream: formBase.stream,
         download: {
             segment_download: {
                 segment_timeout: Number(form.segment_timeout.value),
                 segment_attempts: Number(form.segment_attempts.value),
-                headers,
+                headers: formBase.headers,
             },
             segment_post_download: {
                 remove_front_bytes: Number(form.remove_front_bytes.value),
                 remove_back_bytes: Number(form.remove_back_bytes.value),
             },
         },
+        based_on: formBase.based_on,
     };
 }
 
 function resetForm(view) {
     const form = view.querySelector("[data-indexer-form]");
     form.reset();
-    form.based_on.value = "";
+    formBase = null;
     view.querySelector("#spec-select").value = "";
     view.querySelector("#indexer-server").innerHTML = "";
-    view.querySelector("[data-headers]").innerHTML = "";
+    view.querySelector("[data-server-description]").textContent = "";
+    view.querySelector("[data-spec-info]").hidden = true;
     view.querySelector("[data-form-title]").textContent = "Create indexer";
 }
 
@@ -257,7 +277,8 @@ function renderTable(view) {
     const rows = indexers.map((indexer) => `
         <tr>
             <td>${escapeHtml(indexer.name)}</td>
-            <td class="text-truncate" style="max-width: 200px">${escapeHtml(indexer.server)}</td>
+            <td class="text-truncate" style="max-width: 160px">${escapeHtml(indexer.server?.name || "")}</td>
+            <td>${escapeHtml(indexer.algorithm_name || "")}</td>
             <td>${indexer.uses_cloudflare ? "Yes" : "No"}</td>
             <td>${escapeHtml(indexer.based_on || "")}</td>
             <td class="text-end text-nowrap">
@@ -269,7 +290,7 @@ function renderTable(view) {
     container.innerHTML = `
         <div class="table-responsive">
             <table class="table table-dark table-hover align-middle">
-                <thead><tr><th>Name</th><th>Server</th><th>Cloudflare</th><th>Based on</th><th></th></tr></thead>
+                <thead><tr><th>Name</th><th>Server</th><th>Algorithm</th><th>Cloudflare</th><th>Based on</th><th></th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>
         </div>`;
@@ -290,26 +311,38 @@ function loadForEdit(view, name) {
 
     const form = view.querySelector("[data-indexer-form]");
     view.querySelector("[data-form-title]").textContent = `Edit indexer: ${indexer.name}`;
-    form.based_on.value = indexer.based_on || "";
+
+    // Prefer the source specification's server list so other servers stay selectable; fall back to
+    // the indexer's own server when the spec is gone. Always make sure the saved server is present.
+    const spec = specs.find((item) => item.name === indexer.based_on);
+    const servers = spec ? spec.server_list.slice() : [];
+    if (!servers.some((server) => server.name === indexer.server.name)) {
+        servers.unshift(indexer.server);
+    }
+
+    formBase = {
+        algorithm_name: indexer.algorithm_name,
+        search: indexer.search,
+        stream: indexer.stream,
+        based_on: indexer.based_on,
+        servers,
+        headers: indexer.download.segment_download.headers || {},
+    };
+
     form.name.value = indexer.name;
     form.uses_cloudflare.checked = indexer.uses_cloudflare;
 
-    const spec = specs.find((item) => item.name === indexer.based_on);
-    const servers = new Set(spec ? spec.servers : []);
-    servers.add(indexer.server);
-    const serverSelect = view.querySelector("#indexer-server");
-    serverSelect.innerHTML = [...servers].map((server) => `<option value="${escapeAttr(server)}">${escapeHtml(server)}</option>`).join("");
-    serverSelect.value = indexer.server;
+    populateServerSelect(view, servers, indexer.server.name);
 
     form.segment_timeout.value = indexer.download.segment_download.segment_timeout;
     form.segment_attempts.value = indexer.download.segment_download.segment_attempts;
     form.remove_front_bytes.value = indexer.download.segment_post_download.remove_front_bytes;
     form.remove_back_bytes.value = indexer.download.segment_post_download.remove_back_bytes;
-    setHeaders(view, indexer.download.segment_download.headers || {});
 
     const specIndex = specs.findIndex((item) => item.name === indexer.based_on);
     view.querySelector("#spec-select").value = specIndex >= 0 ? String(specIndex) : "";
 
+    updateServerInfo(view);
     form.scrollIntoView({ behavior: "smooth" });
 }
 

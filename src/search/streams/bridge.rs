@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use thiserror::Error;
 use url::Url;
 use serde::{Serialize};
@@ -18,47 +20,53 @@ pub enum SearchError {
 }
 
 /////////////////////////////////////////////////////
-// SearchMovieParameters
+// BridgeSearchParameters
 /////////////////////////////////////////////////////
 #[derive(Debug, Serialize)]
-pub struct SearchMovieParameters {
+pub struct BridgeSearchParameters {
     pub name: String,
-    pub year: u16,
+    pub season: Option<u32>,
+    pub episode: Option<u32>,
     #[serde(rename = "tmdbId")]
     pub tmdb_id: u32,
     #[serde(rename = "imdbId")]
     pub imdb_id: String,
-    #[serde(rename = "serverName")]
-    pub server_name: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct SearchEpisodeParameters {
-    pub name: String,
-    pub year: u16,
-    pub season: u32,
-    pub episode: u32,
-    #[serde(rename = "tmdbId")]
-    pub tmdb_id: u32,
-    #[serde(rename = "imdbId")]
-    pub imdb_id: String,
-    #[serde(rename = "serverName")]
-    pub server_name: Option<String>,
+    #[serde(rename = "serverUrl")]
+    pub server_url: Url,
+    pub emulate_url: Url,
+    pub headers: HashMap<String, String>,
 }
 
 /////////////////////////////////////////////////////
 // Bridge interface
 /////////////////////////////////////////////////////
 pub async fn bridge_search_movie_streams(
-    indexer: &config::Indexer, name: &str, year: u16, tmdb_id: u32, imdb_id: String, bridge_url: &Url, requester: &request::Requester,
+    indexer: &config::Indexer, name: &str, tmdb_id: u32, imdb_id: String, bridge_url: &Url, requester: &request::Requester,
 ) -> Result<Streams, SearchError> {
-    let mut url = bridge_url.clone().join(format!("/api/{}/movie", indexer.based_on).as_str()).unwrap();
-    let parameters = serde_url_params::to_string(&SearchMovieParameters {
+    let mut url = bridge_url
+        .clone()
+        .join(format!("/api/{}/movie", indexer.algorithm_name).as_str())
+        .unwrap();
+    let headers = {
+        let mut headers = indexer.search.headers.clone();
+        if let Some(server_headers) = &indexer.server.headers {
+            // Make the serverside headers override the global headers
+            for (key, value) in server_headers {
+                headers.insert(key.clone(), value.clone());
+            }
+        }
+        headers
+    };
+
+    let parameters = serde_qs::to_string(&BridgeSearchParameters {
         name: name.to_string(),
-        year: year,
+        season: None,
+        episode: None,
         tmdb_id: tmdb_id,
         imdb_id: imdb_id,
-        server_name: Some(indexer.server.clone()),
+        server_url: indexer.server.search_url.clone(),
+        emulate_url: indexer.search.emulate_url.clone(),
+        headers: headers,
     })
     .unwrap();
     url.set_query(Some(parameters.as_str()));
@@ -70,18 +78,32 @@ pub async fn bridge_search_movie_streams(
 }
 
 pub async fn bridge_search_episode_streams(
-    indexer: &config::Indexer, name: &str, year: u16, tmdb_id: u32, imdb_id: String, season: u32, episode: u32, bridge_url: &Url,
-    requester: &request::Requester,
+    indexer: &config::Indexer, name: &str, tmdb_id: u32, imdb_id: String, season: u32, episode: u32, bridge_url: &Url, requester: &request::Requester,
 ) -> Result<Streams, SearchError> {
-    let mut url = bridge_url.clone().join(format!("/api/{}/series", indexer.based_on).as_str()).unwrap();
-    let parameters = serde_url_params::to_string(&SearchEpisodeParameters {
+    let mut url = bridge_url
+        .clone()
+        .join(format!("/api/{}/series", indexer.algorithm_name).as_str())
+        .unwrap();
+    let headers = {
+        let mut headers = indexer.search.headers.clone();
+        if let Some(server_headers) = &indexer.server.headers {
+            // Make the serverside headers override the global headers
+            for (key, value) in server_headers {
+                headers.insert(key.clone(), value.clone());
+            }
+        }
+        headers
+    };
+
+    let parameters = serde_qs::to_string(&BridgeSearchParameters {
         name: name.to_string(),
-        year: year,
-        season: season,
-        episode: episode,
+        season: Some(season),
+        episode: Some(episode),
         tmdb_id: tmdb_id,
         imdb_id: imdb_id,
-        server_name: Some(indexer.server.clone()),
+        server_url: indexer.server.search_url.clone(),
+        emulate_url: indexer.search.emulate_url.clone(),
+        headers: headers,
     })
     .unwrap();
     url.set_query(Some(parameters.as_str()));

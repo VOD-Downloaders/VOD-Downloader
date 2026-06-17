@@ -1,5 +1,5 @@
 use url::Url;
-use serde::{Serialize, Deserialize};
+use serde::Serialize;
 
 use super::SeriesPageResultBody;
 

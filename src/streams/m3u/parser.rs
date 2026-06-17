@@ -14,8 +14,6 @@ pub enum ParseError {
     UnknownFormat,
     #[error("Invalid RESOLUTION attribute.")]
     InvalidResolutionAttribute,
-    #[error("Failed to parse RESOLUTION to u32.")]
-    FailedToParseResolution,
     #[error("Stream URL missing after stream info tag")]
     MissingStreamUrl,
 }
@@ -30,7 +28,7 @@ pub enum M3UResult {
 }
 
 impl M3UResult {
-    pub const DEFAULT_RESOLUTION: &str = "1080x720";
+    pub const DEFAULT_RESOLUTION: &str = "1080p";
 }
 
 /////////////////////////////////////////////////////

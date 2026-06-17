@@ -11,7 +11,10 @@ use futures::TryFutureExt;
 use serde::{Serialize, Deserialize};
 
 use super::VERSION_TAG_MAJOR_MINOR;
-use super::download::*;
+use super::IndexerServer;
+use super::StreamSpecification;
+use super::DownloadSpecification;
+use super::SearchSpecification;
 
 pub const INDEXERS_DIR: &str = "/config/indexers/";
 pub const INDEXER_SPECIFICATIONS_DIR: &str = "/config/indexers/specifications/";
@@ -22,10 +25,13 @@ pub const INDEXER_SPECIFICATIONS_DIR: &str = "/config/indexers/specifications/";
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IndexerSpecification {
     pub name: String,
-    pub servers: Vec<String>,
+    pub algorithm_name: String,
+    pub server_list: Vec<IndexerServer>,
 
     pub uses_cloudflare: bool,
 
+    pub search: SearchSpecification,
+    pub stream: StreamSpecification,
     pub download: DownloadSpecification,
 }
 
@@ -35,9 +41,13 @@ pub struct IndexerSpecification {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Indexer {
     pub name: String,
-    pub server: String,
+    pub algorithm_name: String,
+    pub server: IndexerServer,
+
     pub uses_cloudflare: bool,
 
+    pub search: SearchSpecification,
+    pub stream: StreamSpecification,
     pub download: DownloadSpecification,
 
     pub based_on: String,
@@ -137,7 +147,7 @@ pub async fn write_indexer_to_file(indexer: &Indexer, file: &Path) -> Result<(),
             WriteIndexerError::FailedToOpenFile(file.to_path_buf(), error)
         })?;
 
-    let json = serde_json::to_string(indexer).map_err(|_error| WriteIndexerError::UnableToConvertToJson)?;
+    let json = serde_json::to_string_pretty(indexer).map_err(|_error| WriteIndexerError::UnableToConvertToJson)?;
 
     output_file
         .write_all(json.as_bytes())
@@ -148,6 +158,13 @@ pub async fn write_indexer_to_file(indexer: &Indexer, file: &Path) -> Result<(),
 }
 
 pub async fn load_indexers() -> Vec<Indexer> {
+    if !std::path::PathBuf::from(INDEXERS_DIR).exists() {
+        if let Err(error) = std::fs::create_dir(INDEXERS_DIR) {
+            error!("Failed to create indexers dir at \"{}\" with error: {}", INDEXERS_DIR, error);
+            return Vec::new();
+        }
+    }
+
     let indexer_paths = std::fs::read_dir(INDEXERS_DIR);
     let Ok(indexer_paths) = indexer_paths else {
         return Vec::new();
@@ -177,6 +194,13 @@ pub async fn load_indexers() -> Vec<Indexer> {
 }
 
 pub async fn load_indexer_specifications() -> Vec<IndexerSpecification> {
+    if !std::path::PathBuf::from(INDEXER_SPECIFICATIONS_DIR).exists() {
+        if let Err(error) = std::fs::create_dir(INDEXER_SPECIFICATIONS_DIR) {
+            error!("Failed to create indexer specifications dir at \"{}\" with error: {}", INDEXER_SPECIFICATIONS_DIR, error);
+            return Vec::new();
+        }
+    }
+
     let indexer_specification_paths = std::fs::read_dir(INDEXER_SPECIFICATIONS_DIR);
     let Ok(indexer_specification_paths) = indexer_specification_paths else {
         return Vec::new();

@@ -4,8 +4,6 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use chrono::Datelike;
-use url::Url;
 use axum::{
     extract,
     extract::{State, Query, Path},
@@ -15,12 +13,15 @@ use axum::{
 use super::bodies::*;
 use crate::{
     env,
-    search::info::{tmdb_get_episode, tmdb_get_movie, tmdb_get_movie_external_ids, tmdb_get_season, tmdb_get_series, tmdb_get_series_external_ids},
+    search::info::{tmdb_get_episode, tmdb_get_movie, tmdb_get_movie_external_ids, tmdb_get_series, tmdb_get_series_external_ids},
 };
 use crate::config;
 use crate::request;
 use crate::search;
 use crate::download;
+use crate::streams;
+
+const OUTPUT_DIRECTORY: &str = "/output/";
 
 /////////////////////////////////////////////////////
 // State
@@ -312,13 +313,11 @@ pub async fn get_streams_movie(
     };
 
     let movie_info = tmdb_get_movie(movie_id, &requester).await;
-    let year = dateparser::parse(movie_info.release_date.as_str()).unwrap().year() as u16;
     let external_ids = tmdb_get_movie_external_ids(movie_id, &requester).await;
 
     let streams = search::streams::bridge_search_movie_streams(
         &indexer,
         movie_info.title.as_str(),
-        year,
         movie_info.id,
         external_ids.imdb_id,
         &state.environment.bridge_url,
@@ -358,27 +357,12 @@ pub async fn get_streams_episode(
     };
 
     let series_info = tmdb_get_series(series_id, &requester).await;
-    let season_info = tmdb_get_season(series_id, season_number, &requester).await;
     let episode_info = tmdb_get_episode(series_id, season_number, episode_number, &requester).await;
-    let year = dateparser::parse(
-        episode_info
-            .air_date
-            .unwrap_or(
-                season_info
-                    .air_date
-                    .unwrap_or(series_info.first_air_date.unwrap_or("1970-01-01".to_string())),
-            )
-            .as_str(),
-    )
-    .unwrap()
-    .year() as u16;
     let external_ids = tmdb_get_series_external_ids(series_id, &requester).await;
-    // let external_ids = tmdb_get_episode_external_ids(series_id, season_number, episode_number, &requester).await;
 
     let streams = search::streams::bridge_search_episode_streams(
         &indexer,
         episode_info.name.as_str(),
-        year,
         series_info.id,
         external_ids.imdb_id,
         season_number,
@@ -420,13 +404,18 @@ pub async fn post_start_download(
         error: format!("Unable to create requester object due to error: {}", error),
     })?;
 
-    // TODO: Maybe a CONST somewhere
-    let output_file = PathBuf::from("/output/").join(PathBuf::from(payload.output_file));
-
+    let output_file = PathBuf::from(OUTPUT_DIRECTORY).join(PathBuf::from(payload.output_file));
     tokio::spawn(async move {
-        let result = download::download_stream(&indexer, payload.stream, &requester, output_file.as_path()).await;
+        let stream_result = streams::convert_search_stream_to_downloadable(&indexer, &requester, payload.stream).await;
 
-        if let Err(error) = result {
+        if let Err(error) = stream_result {
+            error!("Failed to convert stream to a downloadable object, error: {}", error);
+            return;
+        }
+
+        let download_result = download::download_stream(&indexer, stream_result.unwrap(), &requester, output_file.as_path()).await;
+
+        if let Err(error) = download_result {
             error!("Download failed due to error: {}", error);
         }
     });
