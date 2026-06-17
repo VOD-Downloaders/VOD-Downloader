@@ -43,7 +43,10 @@ pub struct BridgeSearchParameters {
 pub async fn bridge_search_movie_streams(
     indexer: &config::Indexer, name: &str, tmdb_id: u32, imdb_id: String, bridge_url: &Url, requester: &request::Requester,
 ) -> Result<Streams, SearchError> {
-    let mut url = bridge_url.clone().join(format!("/api/{}/movie", indexer.based_on).as_str()).unwrap();
+    let mut url = bridge_url
+        .clone()
+        .join(format!("/api/{}/movie", indexer.algorithm_name).as_str())
+        .unwrap();
     let headers = {
         let mut headers = indexer.search.headers.clone();
         if let Some(server_headers) = &indexer.server.headers {
@@ -77,7 +80,10 @@ pub async fn bridge_search_movie_streams(
 pub async fn bridge_search_episode_streams(
     indexer: &config::Indexer, name: &str, tmdb_id: u32, imdb_id: String, season: u32, episode: u32, bridge_url: &Url, requester: &request::Requester,
 ) -> Result<Streams, SearchError> {
-    let mut url = bridge_url.clone().join(format!("/api/{}/series", indexer.based_on).as_str()).unwrap();
+    let mut url = bridge_url
+        .clone()
+        .join(format!("/api/{}/series", indexer.algorithm_name).as_str())
+        .unwrap();
     let headers = {
         let mut headers = indexer.search.headers.clone();
         if let Some(server_headers) = &indexer.server.headers {
