@@ -14,8 +14,6 @@ pub enum ParseError {
     UnknownFormat,
     #[error("Invalid RESOLUTION attribute.")]
     InvalidResolutionAttribute,
-    #[error("Failed to parse RESOLUTION to u32.")]
-    FailedToParseResolution,
     #[error("Stream URL missing after stream info tag")]
     MissingStreamUrl,
 }
