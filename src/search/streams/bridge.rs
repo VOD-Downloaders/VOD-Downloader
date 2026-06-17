@@ -34,7 +34,7 @@ pub struct BridgeSearchParameters {
     #[serde(rename = "serverUrl")]
     pub server_url: Url,
     pub emulate_url: Url,
-    pub headers: HashMap<String, String>, // TODO: Make sure its encoded as headers[Referer]=https://example.com/}
+    pub headers: HashMap<String, String>,
 }
 
 /////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ pub async fn bridge_search_movie_streams(
         headers
     };
 
-    let parameters = serde_url_params::to_string(&BridgeSearchParameters {
+    let parameters = serde_qs::to_string(&BridgeSearchParameters {
         name: name.to_string(),
         season: None,
         episode: None,
@@ -89,7 +89,7 @@ pub async fn bridge_search_episode_streams(
         headers
     };
 
-    let parameters = serde_url_params::to_string(&BridgeSearchParameters {
+    let parameters = serde_qs::to_string(&BridgeSearchParameters {
         name: name.to_string(),
         season: Some(season),
         episode: Some(episode),

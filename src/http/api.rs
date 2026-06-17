@@ -19,6 +19,7 @@ use crate::config;
 use crate::request;
 use crate::search;
 use crate::download;
+use crate::streams;
 
 const OUTPUT_DIRECTORY: &str = "/output/";
 
@@ -405,9 +406,16 @@ pub async fn post_start_download(
 
     let output_file = PathBuf::from(OUTPUT_DIRECTORY).join(PathBuf::from(payload.output_file));
     tokio::spawn(async move {
-        let result = download::download_stream(&indexer, payload.stream, &requester, output_file.as_path()).await;
+        let stream_result = streams::convert_search_stream_to_downloadable(&indexer, &requester, payload.stream).await;
 
-        if let Err(error) = result {
+        if let Err(error) = stream_result {
+            error!("Failed to convert stream to a downloadable object, error: {}", error);
+            return;
+        }
+
+        let download_result = download::download_stream(&indexer, stream_result.unwrap(), &requester, output_file.as_path()).await;
+
+        if let Err(error) = download_result {
             error!("Download failed due to error: {}", error);
         }
     });
