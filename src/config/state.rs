@@ -11,7 +11,6 @@ use crate::config::IndexerSpecification;
 use crate::config::get_new_indexer_specifications;
 use crate::config::load_indexers;
 use crate::config::load_indexer_specifications;
-use crate::download;
 
 use super::Indexer;
 use super::GetSpecificationError;

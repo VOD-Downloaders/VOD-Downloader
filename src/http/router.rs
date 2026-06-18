@@ -105,12 +105,7 @@ impl Router {
             .route("/api/info/series/{series_id}", routing::get(api::get_series))
             .route("/api/info/series/{series_id}/external_ids", routing::get(api::get_series_external_ids))
             .route("/api/info/series/{series_id}/season/{season_number}", routing::get(api::get_season))
-            .route("/api/info/series/{series_id}/season/{season_number}/external_ids", routing::get(api::get_season_external_ids))
             .route("/api/info/series/{series_id}/season/{season_number}/episode/{episode_number}", routing::get(api::get_episode))
-            .route(
-                "/api/info/series/{series_id}/season/{season_number}/episode/{episode_number}/external_ids",
-                routing::get(api::get_episode_external_ids),
-            )
             // Streams
             .route("/api/streams/indexer/{indexer_name}/movie/{movie_id}", routing::get(api::get_streams_movie))
             .route("/api/streams/indexer/{indexer_name}/series/{series_id}/season/{season_number}/episode/{episode_number}", routing::get(api::get_streams_episode))
