@@ -229,7 +229,7 @@ pub async fn load_indexer_specifications() -> Vec<IndexerSpecification> {
     specifications
 }
 
-pub async fn get_new_specifications() -> Result<(), GetSpecificationError> {
+pub async fn get_new_indexer_specifications() -> Result<(), GetSpecificationError> {
     const REPO_API: &str = "https://api.github.com/repos/VOD-Downloaders/FMHY-Indexers";
 
     let indexer_specifications_dir = PathBuf::from(INDEXER_SPECIFICATIONS_DIR);

@@ -19,6 +19,12 @@ pub struct CreateIndexerRequest {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct UpdateIndexerRequest {
+    pub old_name: String,
+    pub indexer: Indexer,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct DeleteIndexerRequest {
     pub name: String,
 }
@@ -94,12 +100,36 @@ impl IntoResponse for CreateIndexerResponse {
 }
 
 #[derive(Serialize)]
+pub struct UpdateIndexersResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+}
+
+impl IntoResponse for UpdateIndexersResponse {
+    fn into_response(self) -> response::Response {
+        (self.status).into_response()
+    }
+}
+
+#[derive(Serialize)]
 pub struct DeleteIndexerResponse {
     #[serde(skip)]
     pub status: StatusCode,
 }
 
 impl IntoResponse for DeleteIndexerResponse {
+    fn into_response(self) -> response::Response {
+        (self.status).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct RefreshIndexersResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+}
+
+impl IntoResponse for RefreshIndexersResponse {
     fn into_response(self) -> response::Response {
         (self.status).into_response()
     }
@@ -115,6 +145,18 @@ pub struct IndexerSpecificationsResponse {
 impl IntoResponse for IndexerSpecificationsResponse {
     fn into_response(self) -> response::Response {
         (self.status, response::Json(self)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct RefreshIndexerSpecificationsResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+}
+
+impl IntoResponse for RefreshIndexerSpecificationsResponse {
+    fn into_response(self) -> response::Response {
+        (self.status).into_response()
     }
 }
 

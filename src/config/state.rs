@@ -7,8 +7,10 @@ use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
 use serde::{Serialize, Deserialize};
 
-use crate::config::get_new_specifications;
+use crate::config::IndexerSpecification;
+use crate::config::get_new_indexer_specifications;
 use crate::config::load_indexers;
+use crate::config::load_indexer_specifications;
 
 use super::Indexer;
 use super::GetSpecificationError;
@@ -24,7 +26,7 @@ pub enum StateError {
     UnableToParseJson { json: String, error: serde_json::Error },
 
     #[error("{0}")]
-    UnableToRetrieveSpecifications(GetSpecificationError),
+    UnableToRetrieveSpecifications(#[from] GetSpecificationError),
 
     #[error("Unable to open state.json for writing.")]
     UnableToOpen(std::io::Error),
@@ -51,15 +53,21 @@ impl StateBody {
 #[derive(Debug)]
 pub struct State {
     pub indexers: Vec<Indexer>,
+    pub indexer_specifications: Vec<IndexerSpecification>,
 }
 
 impl State {
     const FILE: &str = "/config/state.json";
 
     pub async fn make_default_state() -> Result<Self, StateError> {
-        get_new_specifications().await.map_err(StateError::UnableToRetrieveSpecifications)?; // Get latest indexers
+        get_new_indexer_specifications()
+            .await
+            .map_err(StateError::UnableToRetrieveSpecifications)?; // Get latest indexers
 
-        let state = State { indexers: Vec::new() };
+        let state = State {
+            indexers: Vec::new(),
+            indexer_specifications: Vec::new(),
+        };
         state.write().await?;
 
         Ok(state)
@@ -84,8 +92,12 @@ impl State {
         })?;
 
         let indexers = load_indexers().await;
+        let specifications = load_indexer_specifications().await;
 
-        Ok(Self { indexers: indexers })
+        Ok(Self {
+            indexers: indexers,
+            indexer_specifications: specifications,
+        })
     }
 
     pub async fn write(&self) -> Result<(), StateError> {
@@ -104,8 +116,27 @@ impl State {
         Ok(())
     }
 
+    pub async fn refresh_indexers(&mut self) -> Result<(), StateError> {
+        let indexers = load_indexers().await;
+        self.indexers = indexers;
+        Ok(())
+    }
+
+    pub async fn refresh_indexer_specifications(&mut self) -> Result<(), StateError> {
+        get_new_indexer_specifications().await?;
+        let specifications = load_indexer_specifications().await;
+        self.indexer_specifications = specifications;
+        Ok(())
+    }
+
     pub fn get_indexer_by_name(&self, name: &str) -> Option<&Indexer> {
         trace!("Looking for indexer by name: \"{}\"...", name);
-        self.indexers.iter().find(|item| item.name == name)
+
+        let item = self.indexers.iter().find(|item| item.name == name);
+        if item.is_some() {
+            trace!("Found indexer by name \"{}\".", name);
+        }
+
+        item
     }
 }
