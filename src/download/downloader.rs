@@ -65,7 +65,7 @@ pub async fn download_stream(
         },
         Err(error) => {
             trace!("Download finished unsuccessfully, error: {}.", error);
-            *status.write().await = DownloadStatus::Failed(error);
+            *status.write().await = DownloadStatus::Failed(error.to_string());
         },
     }
 

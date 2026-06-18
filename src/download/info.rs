@@ -1,26 +1,26 @@
 use std::{path::PathBuf};
 
+use serde::{Serialize, Deserialize};
 use chrono::{DateTime, Utc};
 use tokio::sync::RwLock;
-
-use super::DownloadError;
 
 /////////////////////////////////////////////////////
 // DownloadStatus
 /////////////////////////////////////////////////////
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DownloadStatus {
     Pending,
     Converting,
     DownloadingSegments { amount: u32, total: u32 },
     // TODO: MP4
     Finished,
-    Failed(DownloadError),
+    Failed(String),
 }
 
 /////////////////////////////////////////////////////
 // DownloadInfo
 /////////////////////////////////////////////////////
+#[derive(Debug)]
 pub struct DownloadInfo {
     pub start_time: DateTime<Utc>, // readonly
     pub end_time: RwLock<Option<DateTime<Utc>>>,

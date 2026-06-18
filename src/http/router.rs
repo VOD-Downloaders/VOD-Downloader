@@ -116,6 +116,7 @@ impl Router {
             .route("/api/streams/indexer/{indexer_name}/series/{series_id}/season/{season_number}/episode/{episode_number}", routing::get(api::get_streams_episode))
             // Download
             .route("/api/download/indexer/{indexer_name}", routing::post(api::post_start_download))
+            .route("/api/download/{id}", routing::get(api::get_download_info))
 
             // HTML, CSS, JS
             .fallback_service(web_source_service)

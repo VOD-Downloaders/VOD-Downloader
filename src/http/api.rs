@@ -503,3 +503,27 @@ pub async fn post_start_download(
         id: id,
     })
 }
+
+pub async fn get_download_info(State(state): State<Arc<AppState>>, Path(id): Path<u32>) -> Result<DownloadInfoResponse, ErrorResponse> {
+    trace!("Received get_download_info for download id {}", id);
+
+    let guard = state.downloads.read().await;
+    let Some(download_info) = guard.get(&id) else {
+        error!("Trying to retrieve download information for download by id {}, id not found.", id);
+        return Err(ErrorResponse {
+            status: StatusCode::BAD_REQUEST,
+            error: format!("Trying to retrieve download information for download by id {}, id not found.", id),
+        });
+    };
+
+    let start_time = download_info.start_time.timestamp() as u64;
+    let end_time = download_info.end_time.read().await.map(|time| time.timestamp() as u64);
+
+    Ok(DownloadInfoResponse {
+        status: StatusCode::OK,
+        start_time: start_time,
+        end_time: end_time,
+        output_file: download_info.output_file.clone(),
+        download_status: download_info.status.read().await.clone(),
+    })
+}

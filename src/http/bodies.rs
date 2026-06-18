@@ -1,10 +1,12 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use axum::{
     response::{self, IntoResponse},
     http::StatusCode,
 };
 
-use crate::config::Indexer;
+use crate::{config::Indexer, download::DownloadStatus};
 use crate::config::IndexerSpecification;
 use crate::search::streams::Stream;
 use crate::search::streams::Streams;
@@ -311,6 +313,22 @@ pub struct StartDownloadResponse {
 }
 
 impl IntoResponse for StartDownloadResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct DownloadInfoResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub start_time: u64,
+    pub end_time: Option<u64>,
+    pub output_file: PathBuf,
+    pub download_status: DownloadStatus,
+}
+
+impl IntoResponse for DownloadInfoResponse {
     fn into_response(self) -> response::Response {
         (self.status, response::Json(self)).into_response()
     }

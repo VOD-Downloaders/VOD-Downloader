@@ -11,6 +11,7 @@ use crate::config::IndexerSpecification;
 use crate::config::get_new_indexer_specifications;
 use crate::config::load_indexers;
 use crate::config::load_indexer_specifications;
+use crate::download;
 
 use super::Indexer;
 use super::GetSpecificationError;
@@ -54,6 +55,7 @@ impl StateBody {
 pub struct State {
     pub indexers: Vec<Indexer>,
     pub indexer_specifications: Vec<IndexerSpecification>,
+    // pub download_history: HashMap<download::DownloadInfo>,
 }
 
 impl State {
