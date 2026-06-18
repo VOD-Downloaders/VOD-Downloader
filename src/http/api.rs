@@ -9,7 +9,7 @@ use axum::{
     extract::{State, Query, Path},
     http::{StatusCode},
 };
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use tokio::sync::RwLock;
 
 use super::bodies::*;
@@ -28,35 +28,10 @@ const OUTPUT_DIRECTORY: &str = "/output/";
 /////////////////////////////////////////////////////
 // State
 /////////////////////////////////////////////////////
-#[derive(Debug, Clone)]
-pub enum DownloadStatus {
-    Pending,
-    Converting,
-    DownloadingSegments { amount: u32, total: u32 },
-    // TODO: MP4
-    Finished,
-}
-
-pub struct DownloadInfo {
-    pub start_time: DateTime<Utc>, // readonly
-    pub output_file: PathBuf,      // readonly
-    pub status: RwLock<DownloadStatus>,
-}
-
-impl DownloadInfo {
-    pub fn new(output_file: &std::path::Path) -> Self {
-        Self {
-            start_time: Utc::now(),
-            output_file: output_file.to_path_buf(),
-            status: RwLock::new(DownloadStatus::Pending),
-        }
-    }
-}
-
 pub struct AppState {
     pub state: RwLock<config::State>,
     pub environment: env::EnvOptions, // readonly
-    pub downloads: RwLock<HashMap<u32, Arc<DownloadInfo> /* readonly */>>,
+    pub downloads: RwLock<HashMap<u32, Arc<download::DownloadInfo> /* readonly */>>,
 }
 
 impl AppState {
@@ -496,10 +471,10 @@ pub async fn post_start_download(
     })?;
 
     let output_file = PathBuf::from(OUTPUT_DIRECTORY).join(PathBuf::from(payload.output_file));
-    let download_info = Arc::new(DownloadInfo::new(output_file.as_path()));
+    let download_info = Arc::new(download::DownloadInfo::new(output_file.as_path()));
     let download_info_clone = Arc::clone(&download_info);
     tokio::spawn(async move {
-        *download_info_clone.status.write().await = DownloadStatus::Converting;
+        *download_info_clone.status.write().await = download::DownloadStatus::Converting;
         let stream_result = streams::convert_search_stream_to_downloadable(&indexer, &requester, payload.stream).await;
 
         if let Err(error) = stream_result {
@@ -507,7 +482,9 @@ pub async fn post_start_download(
             return;
         }
 
-        let download_result = download::download_stream(&indexer, stream_result.unwrap(), &requester, output_file.as_path()).await;
+        let download_result =
+            download::download_stream(&indexer, stream_result.unwrap(), &requester, output_file.as_path(), &download_info_clone.status).await;
+        *download_info_clone.end_time.write().await = Some(Utc::now());
 
         if let Err(error) = download_result {
             error!("Download failed due to error: {}", error);
