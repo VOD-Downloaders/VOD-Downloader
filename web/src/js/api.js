@@ -65,6 +65,10 @@ export function createIndexer(indexer) {
     return request("/api/indexers/create", jsonPost({ indexer }));
 }
 
+export function updateIndexer(oldName, indexer) {
+    return request("/api/indexers/update", jsonPost({ old_name: oldName, indexer }));
+}
+
 export function deleteIndexer(name) {
     return request("/api/indexers/delete", jsonPost({ name }));
 }

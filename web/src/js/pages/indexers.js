@@ -1,10 +1,14 @@
 import {
-    getIndexers, getSpecifications, refetchSpecifications, reloadSpecifications, reloadIndexers, createIndexer, deleteIndexer,
+    getIndexers, getSpecifications, refetchSpecifications, reloadSpecifications, reloadIndexers, createIndexer, updateIndexer, deleteIndexer,
 } from "../api.js";
 import { escapeHtml, escapeAttr, errorAlert, spinner, toast } from "../ui.js";
 
 let specs = [];
 let indexers = [];
+
+// Name of the indexer currently being edited, or null when creating a new one. Drives whether the
+// form submit hits the update endpoint (with old_name) or the create endpoint.
+let editingName = null;
 
 // Template carried into the form for the current edit/create. The non-tunable parts of an indexer
 // (algorithm_name, search, stream, based_on, segment headers) come straight from the chosen
@@ -244,7 +248,11 @@ function wireForm(view) {
         }
 
         try {
-            await createIndexer(indexer);
+            if (editingName) {
+                await updateIndexer(editingName, indexer);
+            } else {
+                await createIndexer(indexer);
+            }
             toast(`Saved indexer "${indexer.name}".`);
             indexers = await getIndexers();
             renderTable(view);
@@ -286,6 +294,7 @@ function resetForm(view) {
     const form = view.querySelector("[data-indexer-form]");
     form.reset();
     formBase = null;
+    editingName = null;
     view.querySelector("#spec-select").value = "";
     view.querySelector("#indexer-server").innerHTML = "";
     view.querySelector("[data-server-description]").textContent = "";
@@ -337,6 +346,7 @@ function loadForEdit(view, name) {
     }
 
     const form = view.querySelector("[data-indexer-form]");
+    editingName = indexer.name;
     view.querySelector("[data-form-title]").textContent = `Edit indexer: ${indexer.name}`;
 
     // Prefer the source specification's server list so other servers stay selectable; fall back to
