@@ -124,6 +124,12 @@ impl State {
     }
 
     pub async fn refresh_indexer_specifications(&mut self) -> Result<(), StateError> {
+        let specifications = load_indexer_specifications().await;
+        self.indexer_specifications = specifications;
+        Ok(())
+    }
+
+    pub async fn refetch_indexer_specifications(&mut self) -> Result<(), StateError> {
         get_new_indexer_specifications().await?;
         let specifications = load_indexer_specifications().await;
         self.indexer_specifications = specifications;

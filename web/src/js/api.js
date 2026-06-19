@@ -47,13 +47,26 @@ export async function getSpecifications() {
     return data.indexers;
 }
 
-export async function refreshSpecifications() {
-    const data = await request("/api/indexers/specifications/refresh", { method: "POST" });
-    return data.indexers;
+// Re-fetch specifications from GitHub, then reload them from disk.
+export function refetchSpecifications() {
+    return request("/api/indexers/specifications/refetch", { method: "POST" });
+}
+
+// Reload specifications from disk (no GitHub fetch).
+export function reloadSpecifications() {
+    return request("/api/indexers/specifications/refresh", { method: "POST" });
+}
+
+export function reloadIndexers() {
+    return request("/api/indexers/refresh", { method: "POST" });
 }
 
 export function createIndexer(indexer) {
     return request("/api/indexers/create", jsonPost({ indexer }));
+}
+
+export function updateIndexer(oldName, indexer) {
+    return request("/api/indexers/update", jsonPost({ old_name: oldName, indexer }));
 }
 
 export function deleteIndexer(name) {
@@ -97,4 +110,8 @@ export function getEpisodeStreams(indexer, id, seasonNumber, episodeNumber) {
 // Download
 export function startDownload(indexer, payload) {
     return request(`/api/download/indexer/${encodeURIComponent(indexer)}`, jsonPost(payload));
+}
+
+export function getDownloadInfo(id) {
+    return request(`/api/download/${encodeURIComponent(id)}`);
 }

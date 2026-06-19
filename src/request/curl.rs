@@ -36,7 +36,7 @@ impl CurlRequester {
         let command = command_base
             .args([
                 "--silent",
-                "--fail",
+                "--fail-with-body",
                 "--globoff",
                 "--connect-timeout",
                 connect_timeout_str.as_str(),
@@ -52,13 +52,15 @@ impl CurlRequester {
 
         trace!("Full get_bytes/get_string command is: {:?}", command);
 
-        let output = command
-            .output()
-            .await
-            .map_err(|error| RequestError::RequestFailedToSend(error.to_string()))?;
+        let output = command.output().await.map_err(|error| {
+            trace!("Request failed to send due to error: {}", error);
+            RequestError::RequestFailedToSend(error.to_string())
+        })?;
 
         if !output.status.success() {
-            return Err(RequestError::RequestFailed(format!("Exit status: {}, Output: {}", output.status, String::from_utf8_lossy(&output.stderr))));
+            let error_output = String::from_utf8_lossy(&output.stdout);
+            trace!("Request failed due to error: {}", error_output);
+            return Err(RequestError::RequestFailed(format!("Exit status: {}, Output: {}", output.status, error_output)));
         }
 
         Ok(output.stdout)

@@ -1,7 +1,7 @@
 // Shared UI helpers: escaping, TMDB images, spinners/alerts/toasts, the indexer stream-search
 // toolbar, and the stream-results + download modals.
-import { startDownload } from "./api.js";
-import { addDownload, getLastIndexer, setLastIndexer } from "./store.js";
+import { startDownload, getEpisodeStreams } from "./api.js";
+import { addDownload } from "./store.js";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p";
 const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
@@ -113,49 +113,81 @@ export function indexerActionsHtml(indexers) {
             <a href="#/indexers" class="alert-link">Add one</a> to search for streams.</div>`;
     }
 
-    const options = indexers.map((indexer) => `<option value="${escapeAttr(indexer.name)}">${escapeHtml(indexer.name)}</option>`).join("");
-
     return `
-        <div class="d-flex flex-wrap gap-2 align-items-center">
-            <button type="button" class="btn btn-primary btn-sm" data-search-all>Search all indexers</button>
-            <div class="input-group input-group-sm w-auto">
-                <select class="form-select" data-indexer-select aria-label="Indexer">${options}</select>
-                <button type="button" class="btn btn-outline-light" data-search-one>Search this indexer</button>
-            </div>
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-primary btn-sm" data-search>Search</button>
         </div>`;
 }
 
 export function attachStreamSearch(scope, { indexers, titleHint, fetcher }) {
-    const searchAll = scope.querySelector("[data-search-all]");
-    const searchOne = scope.querySelector("[data-search-one]");
-    const select = scope.querySelector("[data-indexer-select]");
-
-    if (select) {
-        const last = getLastIndexer();
-        if (last && indexers.some((indexer) => indexer.name === last)) {
-            select.value = last;
-        }
-    }
-
-    if (searchAll) {
-        searchAll.addEventListener("click", () => openStreamSearch({ indexers, selected: "all", titleHint, fetcher }));
-    }
-
-    if (searchOne) {
-        searchOne.addEventListener("click", () => {
-            setLastIndexer(select.value);
-            openStreamSearch({ indexers, selected: select.value, titleHint, fetcher });
-        });
+    const button = scope.querySelector("[data-search]");
+    if (button) {
+        button.addEventListener("click", () => openStreamSearch({ indexers, titleHint, fetcher }));
     }
 }
 
 // --- Stream results + download ---------------------------------------------
-export async function openStreamSearch({ indexers, selected, titleHint, fetcher }) {
+// Map a quality string ("1080p", "4K", "HD"...) to a numeric rank for sorting. Unknown -> 0.
+export function qualityRank(quality) {
+    const text = String(quality || "").toLowerCase();
+    if (text.includes("2160") || text.includes("4k")) {
+        return 2160;
+    }
+    if (text.includes("1440")) {
+        return 1440;
+    }
+    const match = text.match(/(\d{3,4})/);
+    return match ? Number(match[1]) : 0;
+}
+
+// --- Click-to-sort table headers -------------------------------------------
+const STREAM_COLUMNS = [
+    { key: "quality", label: "Quality", defaultDir: "desc", value: (row) => qualityRank(row.stream.quality) },
+    { key: "indexer", label: "Indexer", defaultDir: "asc", value: (row) => row.indexer },
+    { key: "url", label: "URL", defaultDir: "asc", value: (row) => String(row.stream.url) },
+];
+
+const SEASON_COLUMNS = [
+    { key: "episode", label: "Episode", defaultDir: "asc", value: (row) => row.episodeNumber },
+    { key: "quality", label: "Quality", defaultDir: "desc", value: (row) => qualityRank(row.stream.quality) },
+    { key: "indexer", label: "Indexer", defaultDir: "asc", value: (row) => row.indexer },
+    { key: "url", label: "URL", defaultDir: "asc", value: (row) => String(row.stream.url) },
+];
+
+function compareValues(a, b) {
+    if (typeof a === "number" && typeof b === "number") {
+        return a - b;
+    }
+    return String(a).localeCompare(String(b));
+}
+
+function sortRows(rows, columns, sortKey, sortDir) {
+    const column = columns.find((item) => item.key === sortKey);
+    if (!column) {
+        return [...rows];
+    }
+    const factor = sortDir === "asc" ? 1 : -1;
+    return [...rows].sort((a, b) => factor * compareValues(column.value(a), column.value(b)));
+}
+
+function columnDefaultDir(columns, key) {
+    return columns.find((item) => item.key === key)?.defaultDir || "asc";
+}
+
+function sortableHead(columns, sortKey, sortDir, trailingBlank = true) {
+    const headers = columns.map((column) => {
+        const arrow = column.key === sortKey ? (sortDir === "asc" ? " ▲" : " ▼") : "";
+        return `<th role="button" class="user-select-none" style="cursor: pointer" data-sort-key="${column.key}">${escapeHtml(column.label)}${arrow}</th>`;
+    }).join("");
+    return `<thead><tr>${headers}${trailingBlank ? "<th></th>" : ""}</tr></thead>`;
+}
+
+export async function openStreamSearch({ indexers, titleHint, fetcher }) {
     const { wrapper, modal } = makeModal(`Streams — ${titleHint}`, spinner("Searching for streams..."));
     modal.show();
     const body = wrapper.querySelector(".modal-body");
 
-    const targets = selected === "all" ? indexers.map((indexer) => indexer.name) : [selected];
+    const targets = indexers.map((indexer) => indexer.name);
 
     const settled = await Promise.allSettled(
         targets.map((name) => fetcher(name).then((streams) => ({ name, streams }))),
@@ -183,16 +215,34 @@ export async function openStreamSearch({ indexers, selected, titleHint, fetcher 
         statuses.push({ indexer: name, state: streamList.length ? "ok" : "empty", detail: `${streamList.length} stream(s)` });
     });
 
-    body.innerHTML = renderStreamTable(rows, subtitles, statuses);
-    body.querySelectorAll("[data-stream-row]").forEach((button) => {
-        button.addEventListener("click", () => {
-            const { indexer, stream } = rows[Number(button.dataset.streamRow)];
-            openDownloadModal({ indexer, stream, titleHint });
+    let sortKey = "quality";
+    let sortDir = "desc";
+    const draw = () => {
+        const sorted = sortRows(rows, STREAM_COLUMNS, sortKey, sortDir);
+        body.innerHTML = renderStreamTable(sorted, subtitles, statuses, sortKey, sortDir);
+        body.querySelectorAll("[data-sort-key]").forEach((header) => {
+            header.addEventListener("click", () => {
+                const key = header.dataset.sortKey;
+                if (sortKey === key) {
+                    sortDir = sortDir === "asc" ? "desc" : "asc";
+                } else {
+                    sortKey = key;
+                    sortDir = columnDefaultDir(STREAM_COLUMNS, key);
+                }
+                draw();
+            });
         });
-    });
+        body.querySelectorAll("[data-stream-row]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const { indexer, stream } = sorted[Number(button.dataset.streamRow)];
+                openDownloadModal({ indexer, stream, titleHint });
+            });
+        });
+    };
+    draw();
 }
 
-function renderStreamTable(rows, subtitles, statuses) {
+function renderStreamTable(rows, subtitles, statuses, sortKey, sortDir) {
     const statusBlock = renderStatusBlock(statuses);
 
     if (rows.length === 0) {
@@ -217,11 +267,175 @@ function renderStreamTable(rows, subtitles, statuses) {
         ${statusBlock}
         <div class="table-responsive">
             <table class="table table-dark table-hover align-middle">
-                <thead><tr><th>Quality</th><th>Indexer</th><th>URL</th><th></th></tr></thead>
+                ${sortableHead(STREAM_COLUMNS, sortKey, sortDir)}
                 <tbody>${streamRows}</tbody>
             </table>
         </div>
         ${subtitleBlock}`;
+}
+
+// --- Season-wide stream search (all episodes at once) ----------------------
+export async function openSeasonStreamSearch({ indexers, seriesName, seriesId, seasonNumber, episodes }) {
+    const { wrapper, modal } = makeModal(`Season ${seasonNumber} — ${seriesName}`, spinner("Searching all episodes for streams..."));
+    modal.show();
+    const body = wrapper.querySelector(".modal-body");
+
+    const targets = indexers.map((indexer) => indexer.name);
+
+    // One request per (episode, indexer); keep a parallel meta array so rejected promises stay attributable.
+    const meta = [];
+    const jobs = [];
+    for (const episode of episodes) {
+        for (const name of targets) {
+            meta.push({ episode, name });
+            jobs.push(getEpisodeStreams(name, seriesId, seasonNumber, episode.episode_number));
+        }
+    }
+
+    const settled = await Promise.allSettled(jobs);
+
+    const rows = [];
+    const statusMap = new Map();
+    settled.forEach((result, index) => {
+        const { episode, name } = meta[index];
+        const status = statusMap.get(name) || { ok: 0, failed: 0 };
+
+        if (result.status !== "fulfilled") {
+            status.failed += 1;
+        } else {
+            const streamList = result.value.streams || [];
+            status.ok += streamList.length;
+            for (const stream of streamList) {
+                rows.push({ episodeNumber: episode.episode_number, episodeName: episode.name, indexer: name, stream });
+            }
+        }
+        statusMap.set(name, status);
+    });
+
+    const statuses = [...statusMap.entries()].map(([name, status]) => ({
+        indexer: name,
+        state: status.ok ? "ok" : status.failed ? "failed" : "empty",
+        detail: `${status.ok} stream(s)${status.failed ? `, ${status.failed} error(s)` : ""}`,
+    }));
+
+    let sortKey = "episode";
+    let sortDir = "asc";
+
+    const draw = () => {
+        if (rows.length === 0) {
+            body.innerHTML = `${renderStatusBlock(statuses)}<div class="alert alert-warning mb-0">No streams found for this season.</div>`;
+            return;
+        }
+
+        const sorted = sortRows(rows, SEASON_COLUMNS, sortKey, sortDir);
+
+        body.innerHTML = `
+            ${renderStatusBlock(statuses)}
+            <div class="d-flex justify-content-end mb-3">
+                <button type="button" class="btn btn-sm btn-success" data-download-all>Download all…</button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle">
+                    ${sortableHead(SEASON_COLUMNS, sortKey, sortDir)}
+                    <tbody>${sorted.map((row, index) => `
+                        <tr>
+                            <td>E${pad(row.episodeNumber)}</td>
+                            <td>${escapeHtml(row.stream.quality || "unknown")}</td>
+                            <td>${escapeHtml(row.indexer)}</td>
+                            <td class="text-truncate" style="max-width: 280px"><span class="small text-secondary">${escapeHtml(row.stream.url)}</span></td>
+                            <td class="text-end"><button type="button" class="btn btn-sm btn-primary" data-stream-row="${index}">Download</button></td>
+                        </tr>`).join("")}</tbody>
+                </table>
+            </div>`;
+
+        body.querySelectorAll("[data-sort-key]").forEach((header) => {
+            header.addEventListener("click", () => {
+                const key = header.dataset.sortKey;
+                if (sortKey === key) {
+                    sortDir = sortDir === "asc" ? "desc" : "asc";
+                } else {
+                    sortKey = key;
+                    sortDir = columnDefaultDir(SEASON_COLUMNS, key);
+                }
+                draw();
+            });
+        });
+        body.querySelector("[data-download-all]").addEventListener("click", () => {
+            openBulkDownload({ rows, episodes, seriesName, seasonNumber });
+        });
+        body.querySelectorAll("[data-stream-row]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const row = sorted[Number(button.dataset.streamRow)];
+                const titleHint = `${seriesName} S${pad(seasonNumber)}E${pad(row.episodeNumber)} ${row.episodeName}`;
+                openDownloadModal({ indexer: row.indexer, stream: row.stream, titleHint });
+            });
+        });
+    };
+    draw();
+}
+
+// Prompt for a single quality, then start that quality for every episode that has it.
+function openBulkDownload({ rows, episodes, seriesName, seasonNumber }) {
+    const qualities = [...new Set(rows.map((row) => row.stream.quality || "unknown"))]
+        .sort((a, b) => qualityRank(b) - qualityRank(a));
+    const options = qualities.map((quality) => `<option value="${escapeAttr(quality)}">${escapeHtml(quality)}</option>`).join("");
+
+    const { wrapper, modal } = makeModal("Download all episodes", `
+        <p class="text-secondary">Pick a quality. Every episode with a matching stream starts downloading; episodes without it are skipped.</p>
+        <div class="mb-3">
+            <label class="form-label" for="bulk-quality">Quality</label>
+            <select id="bulk-quality" class="form-select">${options}</select>
+        </div>
+        <div data-bulk-result></div>
+        <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-success" data-bulk-start>Download all</button>
+        </div>`);
+    modal.show();
+
+    const select = wrapper.querySelector("#bulk-quality");
+    const startButton = wrapper.querySelector("[data-bulk-start]");
+    const resultBox = wrapper.querySelector("[data-bulk-result]");
+
+    startButton.addEventListener("click", async () => {
+        const quality = select.value;
+        startButton.disabled = true;
+        resultBox.innerHTML = "";
+
+        const episodeNumbers = [...new Set(episodes.map((episode) => episode.episode_number))].sort((a, b) => a - b);
+        const started = [];
+        const missing = [];
+        const failed = [];
+
+        for (const episodeNumber of episodeNumbers) {
+            const match = rows.find((row) => row.episodeNumber === episodeNumber && (row.stream.quality || "unknown") === quality);
+            if (!match) {
+                missing.push(episodeNumber);
+                continue;
+            }
+
+            const titleHint = `${seriesName} S${pad(seasonNumber)}E${pad(episodeNumber)} ${match.episodeName}`;
+            const outputFile = suggestFilename(titleHint, match.stream.quality);
+            try {
+                const result = await startDownload(match.indexer, { stream: match.stream, output_file: outputFile });
+                addDownload({ id: result.id, output_file: outputFile, indexer: match.indexer, quality: match.stream.quality || "", ts: Date.now() });
+                started.push(episodeNumber);
+            } catch {
+                failed.push(episodeNumber);
+            }
+        }
+
+        toast(`Started ${started.length} download(s).`);
+        let html = `<div class="alert alert-success">Started ${started.length} download(s) at ${escapeHtml(quality)}.</div>`;
+        if (missing.length) {
+            html += `<div class="alert alert-warning mb-0">No ${escapeHtml(quality)} stream for episode(s): ${missing.map((number) => `E${pad(number)}`).join(", ")}.</div>`;
+        }
+        if (failed.length) {
+            html += `<div class="alert alert-danger mb-0 mt-2">Failed to start episode(s): ${failed.map((number) => `E${pad(number)}`).join(", ")}.</div>`;
+        }
+        resultBox.innerHTML = html;
+        startButton.disabled = false;
+    });
 }
 
 const STATUS_BADGE = {
@@ -278,8 +492,14 @@ export function openDownloadModal({ indexer, stream, titleHint }) {
         try {
             const result = await startDownload(indexer, { stream, output_file: outputFile });
             addDownload({ id: result.id, output_file: outputFile, indexer, quality: stream.quality || "", ts: Date.now() });
-            modal.hide();
             toast(`Download started (id ${result.id}).`);
+
+            wrapper.querySelector(".modal-body").innerHTML = `
+                <div class="alert alert-success mb-3">Download started (id ${escapeHtml(String(result.id))}).</div>
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="#/downloads" class="btn btn-primary" data-bs-dismiss="modal">View downloads</a>
+                </div>`;
         } catch (error) {
             startButton.disabled = false;
             errorBox.innerHTML = errorAlert(error.message);

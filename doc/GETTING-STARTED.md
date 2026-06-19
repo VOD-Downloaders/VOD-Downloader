@@ -45,7 +45,7 @@ To create an indexer:
    **Edit** or **Delete** it.
 
 > [!TIP]
-> If a site is missing or out of date, click **Refresh specifications** to re-fetch the
+> If a site is missing or out of date, click **Update specifications** to re-fetch the
 > latest specs from the [FMHY-Indexers](https://github.com/VOD-Downloaders/FMHY-Indexers)
 > repository. Want to contribute a new site? Open a PR there.
 

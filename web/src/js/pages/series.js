@@ -1,7 +1,7 @@
 import { getSeries, getSeason, getIndexers, getEpisodeStreams } from "../api.js";
 import {
-    backdropStyle, posterImg, stillImg, yearOf, pad, escapeHtml, spinner, errorAlert,
-    indexerActionsHtml, attachStreamSearch,
+    backdropStyle, posterImg, stillImg, yearOf, pad, escapeHtml, spinner, errorAlert, toast,
+    indexerActionsHtml, attachStreamSearch, openSeasonStreamSearch,
 } from "../ui.js";
 
 export async function render(view, params) {
@@ -40,7 +40,7 @@ export async function render(view, params) {
         <div class="container-fluid p-4">
             <h2 class="h4 mb-3">Seasons</h2>
             <div class="accordion" id="seasons-accordion">
-                ${seasons.map((season) => seasonHeader(season)).join("")}
+                ${seasons.map((season) => seasonHeader(season, indexers)).join("")}
             </div>
         </div>`;
 
@@ -54,17 +54,40 @@ export async function render(view, params) {
             loadSeason(body, id, collapse.dataset.season, series.name, indexers);
         });
     });
+
+    view.querySelectorAll("[data-season-search]").forEach((button) => {
+        button.addEventListener("click", async (event) => {
+            event.stopPropagation();
+            const seasonNumber = button.dataset.seasonSearch;
+            const original = button.textContent;
+            button.disabled = true;
+            button.textContent = "Searching...";
+            try {
+                const season = await getSeason(id, seasonNumber);
+                openSeasonStreamSearch({ indexers, seriesName: series.name, seriesId: id, seasonNumber, episodes: season.episodes || [] });
+            } catch (error) {
+                toast(error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = original;
+            }
+        });
+    });
 }
 
-function seasonHeader(season) {
+function seasonHeader(season, indexers) {
     const collapseId = `season-${season.season_number}`;
+    const searchButton = indexers && indexers.length > 0
+        ? `<button type="button" class="btn btn-primary btn-sm me-3 flex-shrink-0" data-season-search="${season.season_number}">Search all</button>`
+        : "";
     return `
         <div class="accordion-item">
             <h2 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                    ${escapeHtml(season.name)}
-                    <span class="text-secondary ms-2 small">${season.episode_count} episodes</span>
-                </button>
+                <div class="accordion-button collapsed" role="button" tabindex="0" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                    <span class="flex-grow-1">${escapeHtml(season.name)}
+                        <span class="text-secondary ms-2 small">${season.episode_count} episodes</span></span>
+                    ${searchButton}
+                </div>
             </h2>
             <div id="${collapseId}" class="accordion-collapse collapse" data-season="${season.season_number}" data-bs-parent="#seasons-accordion">
                 <div class="accordion-body"><div class="text-secondary">Loading...</div></div>
@@ -106,13 +129,13 @@ async function loadSeason(body, seriesId, seasonNumber, seriesName, indexers) {
 
 function episodeRow(episode, indexers) {
     return `
-        <div class="episode-row d-flex gap-3 py-3 border-bottom" data-episode="${episode.episode_number}">
+        <div class="episode-row d-flex gap-3 py-3 border-bottom align-items-center" data-episode="${episode.episode_number}">
             <img class="episode-still" src="${stillImg(episode.still_path)}" alt="" loading="lazy">
             <div class="flex-grow-1">
                 <div class="fw-semibold">${episode.episode_number}. ${escapeHtml(episode.name)}
                     <span class="small text-secondary ms-2">${escapeHtml(episode.air_date || "")}</span></div>
-                <p class="small text-secondary mb-2">${escapeHtml(episode.overview || "")}</p>
-                <div data-actions>${indexerActionsHtml(indexers)}</div>
+                <p class="small text-secondary mb-0">${escapeHtml(episode.overview || "")}</p>
             </div>
+            <div data-actions class="flex-shrink-0">${indexerActionsHtml(indexers)}</div>
         </div>`;
 }

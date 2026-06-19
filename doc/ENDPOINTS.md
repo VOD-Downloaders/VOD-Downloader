@@ -11,7 +11,8 @@ The docker container exposes an HTTP server with callable API functions, listed 
 | `POST` | `/api/indexers/delete` | Delete an active indexer | - | `{ name }` | - |
 | `POST` | `/api/indexers/refresh` | Reload active indexers from disk | - | - | - |
 | `GET` | `/api/indexers/specifications` | Retrieve usable indexer specifications | - | - | `{ indexers }` |
-| `POST` | `/api/indexers/specifications/refresh` | Refetch indexer specifications from GitHub | - | - | - |
+| `POST` | `/api/indexers/specifications/refresh` | Reload indexer specifications from disk | - | - | - |
+| `POST` | `/api/indexers/specifications/refetch` | Re-fetch indexer specifications from GitHub, then reload from disk | - | - | - |
 | `GET` | `/api/info/movie/search` | Search for a movie | `name, page` | - | `{ response }` |
 | `GET` | `/api/info/series/search` | Search for a series | `name, page` | - | `{ response }` |
 | `GET` | `/api/info/movie/{movie_id}` | Retrieve movie information | - | - | `{ response }` |
