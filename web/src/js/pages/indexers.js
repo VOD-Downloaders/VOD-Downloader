@@ -1,5 +1,5 @@
 import {
-    getIndexers, getSpecifications, refreshSpecifications, reloadIndexers, createIndexer, deleteIndexer,
+    getIndexers, getSpecifications, refetchSpecifications, reloadSpecifications, reloadIndexers, createIndexer, deleteIndexer,
 } from "../api.js";
 import { escapeHtml, escapeAttr, errorAlert, spinner, toast } from "../ui.js";
 
@@ -28,7 +28,7 @@ export async function render(view) {
                 <h1 class="h3 mb-0">Indexers</h1>
                 <div class="d-flex gap-2">
                     <button class="btn btn-outline-light" data-reload-disk>Reload indexers</button>
-                    <button class="btn btn-outline-light" data-refresh-specs>Refresh specifications</button>
+                    <button class="btn btn-outline-light" data-refresh-specs>Update specifications</button>
                 </div>
             </div>
             <div class="row g-4">
@@ -181,7 +181,8 @@ function wireRefresh(view) {
         button.textContent = "Refreshing...";
 
         try {
-            specs = await refreshSpecifications();
+            await refetchSpecifications();
+            specs = await getSpecifications();
             populateSpecSelect(view);
             toast("Specifications refreshed.");
         } catch (error) {
@@ -201,9 +202,10 @@ function wireReload(view) {
         button.textContent = "Reloading...";
 
         try {
-            await reloadIndexers();
-            indexers = await getIndexers();
+            await Promise.all([reloadIndexers(), reloadSpecifications()]);
+            [indexers, specs] = await Promise.all([getIndexers(), getSpecifications()]);
             renderTable(view);
+            populateSpecSelect(view);
             toast("Reloaded indexers from disk.");
         } catch (error) {
             view.querySelector("[data-form-error]").innerHTML = errorAlert(error.message);
