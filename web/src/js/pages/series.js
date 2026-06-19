@@ -1,6 +1,6 @@
 import { getSeries, getSeason, getIndexers, getEpisodeStreams } from "../api.js";
 import {
-    backdropStyle, posterImg, stillImg, yearOf, pad, escapeHtml, spinner, errorAlert,
+    backdropStyle, posterImg, stillImg, yearOf, pad, escapeHtml, spinner, errorAlert, toast,
     indexerActionsHtml, attachStreamSearch, openSeasonStreamSearch,
 } from "../ui.js";
 
@@ -40,7 +40,7 @@ export async function render(view, params) {
         <div class="container-fluid p-4">
             <h2 class="h4 mb-3">Seasons</h2>
             <div class="accordion" id="seasons-accordion">
-                ${seasons.map((season) => seasonHeader(season)).join("")}
+                ${seasons.map((season) => seasonHeader(season, indexers)).join("")}
             </div>
         </div>`;
 
@@ -54,17 +54,40 @@ export async function render(view, params) {
             loadSeason(body, id, collapse.dataset.season, series.name, indexers);
         });
     });
+
+    view.querySelectorAll("[data-season-search]").forEach((button) => {
+        button.addEventListener("click", async (event) => {
+            event.stopPropagation();
+            const seasonNumber = button.dataset.seasonSearch;
+            const original = button.textContent;
+            button.disabled = true;
+            button.textContent = "Searching...";
+            try {
+                const season = await getSeason(id, seasonNumber);
+                openSeasonStreamSearch({ indexers, seriesName: series.name, seriesId: id, seasonNumber, episodes: season.episodes || [] });
+            } catch (error) {
+                toast(error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = original;
+            }
+        });
+    });
 }
 
-function seasonHeader(season) {
+function seasonHeader(season, indexers) {
     const collapseId = `season-${season.season_number}`;
+    const searchButton = indexers && indexers.length > 0
+        ? `<button type="button" class="btn btn-primary btn-sm me-3 flex-shrink-0" data-season-search="${season.season_number}">Search all</button>`
+        : "";
     return `
         <div class="accordion-item">
             <h2 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
-                    ${escapeHtml(season.name)}
-                    <span class="text-secondary ms-2 small">${season.episode_count} episodes</span>
-                </button>
+                <div class="accordion-button collapsed" role="button" tabindex="0" data-bs-toggle="collapse" data-bs-target="#${collapseId}">
+                    <span class="flex-grow-1">${escapeHtml(season.name)}
+                        <span class="text-secondary ms-2 small">${season.episode_count} episodes</span></span>
+                    ${searchButton}
+                </div>
             </h2>
             <div id="${collapseId}" class="accordion-collapse collapse" data-season="${season.season_number}" data-bs-parent="#seasons-accordion">
                 <div class="accordion-body"><div class="text-secondary">Loading...</div></div>
@@ -90,9 +113,7 @@ async function loadSeason(body, seriesId, seasonNumber, seriesName, indexers) {
         return;
     }
 
-    body.innerHTML = seasonToolbar(indexers) + episodes.map((episode) => episodeRow(episode, indexers)).join("");
-
-    wireSeasonToolbar(body, { indexers, seriesName, seriesId, seasonNumber, episodes });
+    body.innerHTML = episodes.map((episode) => episodeRow(episode, indexers)).join("");
 
     body.querySelectorAll("[data-episode]").forEach((element) => {
         const episodeNumber = element.dataset.episode;
@@ -103,28 +124,6 @@ async function loadSeason(body, seriesId, seasonNumber, seriesName, indexers) {
             titleHint,
             fetcher: (indexerName) => getEpisodeStreams(indexerName, seriesId, seasonNumber, episodeNumber),
         });
-    });
-}
-
-function seasonToolbar(indexers) {
-    if (!indexers || indexers.length === 0) {
-        return "";
-    }
-
-    return `
-        <div class="d-flex justify-content-end mb-3" data-season-toolbar>
-            <button type="button" class="btn btn-primary btn-sm" data-season-search>Search</button>
-        </div>`;
-}
-
-function wireSeasonToolbar(body, { indexers, seriesName, seriesId, seasonNumber, episodes }) {
-    const button = body.querySelector("[data-season-search]");
-    if (!button) {
-        return;
-    }
-
-    button.addEventListener("click", () => {
-        openSeasonStreamSearch({ indexers, seriesName, seriesId, seasonNumber, episodes });
     });
 }
 
