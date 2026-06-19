@@ -1,7 +1,7 @@
 // Shared UI helpers: escaping, TMDB images, spinners/alerts/toasts, the indexer stream-search
 // toolbar, and the stream-results + download modals.
 import { startDownload, getEpisodeStreams } from "./api.js";
-import { addDownload, getLastIndexer, setLastIndexer } from "./store.js";
+import { addDownload } from "./store.js";
 
 const TMDB_IMG = "https://image.tmdb.org/t/p";
 const PLACEHOLDER = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
@@ -113,39 +113,16 @@ export function indexerActionsHtml(indexers) {
             <a href="#/indexers" class="alert-link">Add one</a> to search for streams.</div>`;
     }
 
-    const options = indexers.map((indexer) => `<option value="${escapeAttr(indexer.name)}">${escapeHtml(indexer.name)}</option>`).join("");
-
     return `
-        <div class="d-flex flex-wrap gap-2 align-items-center">
-            <button type="button" class="btn btn-primary btn-sm" data-search-all>Search all indexers</button>
-            <div class="input-group input-group-sm w-auto">
-                <select class="form-select" data-indexer-select aria-label="Indexer">${options}</select>
-                <button type="button" class="btn btn-outline-light" data-search-one>Search this indexer</button>
-            </div>
+        <div class="d-flex justify-content-end">
+            <button type="button" class="btn btn-primary btn-sm" data-search>Search</button>
         </div>`;
 }
 
 export function attachStreamSearch(scope, { indexers, titleHint, fetcher }) {
-    const searchAll = scope.querySelector("[data-search-all]");
-    const searchOne = scope.querySelector("[data-search-one]");
-    const select = scope.querySelector("[data-indexer-select]");
-
-    if (select) {
-        const last = getLastIndexer();
-        if (last && indexers.some((indexer) => indexer.name === last)) {
-            select.value = last;
-        }
-    }
-
-    if (searchAll) {
-        searchAll.addEventListener("click", () => openStreamSearch({ indexers, selected: "all", titleHint, fetcher }));
-    }
-
-    if (searchOne) {
-        searchOne.addEventListener("click", () => {
-            setLastIndexer(select.value);
-            openStreamSearch({ indexers, selected: select.value, titleHint, fetcher });
-        });
+    const button = scope.querySelector("[data-search]");
+    if (button) {
+        button.addEventListener("click", () => openStreamSearch({ indexers, titleHint, fetcher }));
     }
 }
 
@@ -163,21 +140,54 @@ export function qualityRank(quality) {
     return match ? Number(match[1]) : 0;
 }
 
-function qualitySortSelect(qualityDir) {
-    return `
-        <label class="small text-secondary">Quality</label>
-        <select class="form-select form-select-sm w-auto" data-quality-sort aria-label="Sort by quality">
-            <option value="desc"${qualityDir === "desc" ? " selected" : ""}>High → Low</option>
-            <option value="asc"${qualityDir === "asc" ? " selected" : ""}>Low → High</option>
-        </select>`;
+// --- Click-to-sort table headers -------------------------------------------
+const STREAM_COLUMNS = [
+    { key: "quality", label: "Quality", defaultDir: "desc", value: (row) => qualityRank(row.stream.quality) },
+    { key: "indexer", label: "Indexer", defaultDir: "asc", value: (row) => row.indexer },
+    { key: "url", label: "URL", defaultDir: "asc", value: (row) => String(row.stream.url) },
+];
+
+const SEASON_COLUMNS = [
+    { key: "episode", label: "Episode", defaultDir: "asc", value: (row) => row.episodeNumber },
+    { key: "quality", label: "Quality", defaultDir: "desc", value: (row) => qualityRank(row.stream.quality) },
+    { key: "indexer", label: "Indexer", defaultDir: "asc", value: (row) => row.indexer },
+    { key: "url", label: "URL", defaultDir: "asc", value: (row) => String(row.stream.url) },
+];
+
+function compareValues(a, b) {
+    if (typeof a === "number" && typeof b === "number") {
+        return a - b;
+    }
+    return String(a).localeCompare(String(b));
 }
 
-export async function openStreamSearch({ indexers, selected, titleHint, fetcher }) {
+function sortRows(rows, columns, sortKey, sortDir) {
+    const column = columns.find((item) => item.key === sortKey);
+    if (!column) {
+        return [...rows];
+    }
+    const factor = sortDir === "asc" ? 1 : -1;
+    return [...rows].sort((a, b) => factor * compareValues(column.value(a), column.value(b)));
+}
+
+function columnDefaultDir(columns, key) {
+    return columns.find((item) => item.key === key)?.defaultDir || "asc";
+}
+
+function sortableHead(columns, sortKey, sortDir, trailingBlank = true) {
+    const headers = columns.map((column) => {
+        const arrow = column.key === sortKey ? (sortDir === "asc" ? " ▲" : " ▼") : "";
+        return `<th role="button" class="user-select-none" style="cursor: pointer" data-sort-key="${column.key}">${escapeHtml(column.label)}${arrow}</th>`;
+    }).join("");
+    return `<thead><tr>${headers}${trailingBlank ? "<th></th>" : ""}</tr></thead>`;
+}
+
+export async function openStreamSearch({ indexers, titleHint, fetcher }) {
     const { wrapper, modal } = makeModal(`Streams — ${titleHint}`, spinner("Searching for streams..."));
     modal.show();
     const body = wrapper.querySelector(".modal-body");
 
-    const targets = selected === "all" ? indexers.map((indexer) => indexer.name) : [selected];
+    const targets = indexers.map((indexer) => indexer.name);
 
     const settled = await Promise.allSettled(
         targets.map((name) => fetcher(name).then((streams) => ({ name, streams }))),
@@ -205,20 +215,23 @@ export async function openStreamSearch({ indexers, selected, titleHint, fetcher 
         statuses.push({ indexer: name, state: streamList.length ? "ok" : "empty", detail: `${streamList.length} stream(s)` });
     });
 
-    let qualityDir = "desc";
+    let sortKey = "quality";
+    let sortDir = "desc";
     const draw = () => {
-        const sorted = [...rows].sort((a, b) => {
-            const factor = qualityDir === "asc" ? 1 : -1;
-            return factor * (qualityRank(a.stream.quality) - qualityRank(b.stream.quality));
-        });
-        body.innerHTML = renderStreamTable(sorted, subtitles, statuses, qualityDir);
-        const sortSelect = body.querySelector("[data-quality-sort]");
-        if (sortSelect) {
-            sortSelect.addEventListener("change", (event) => {
-                qualityDir = event.target.value;
+        const sorted = sortRows(rows, STREAM_COLUMNS, sortKey, sortDir);
+        body.innerHTML = renderStreamTable(sorted, subtitles, statuses, sortKey, sortDir);
+        body.querySelectorAll("[data-sort-key]").forEach((header) => {
+            header.addEventListener("click", () => {
+                const key = header.dataset.sortKey;
+                if (sortKey === key) {
+                    sortDir = sortDir === "asc" ? "desc" : "asc";
+                } else {
+                    sortKey = key;
+                    sortDir = columnDefaultDir(STREAM_COLUMNS, key);
+                }
                 draw();
             });
-        }
+        });
         body.querySelectorAll("[data-stream-row]").forEach((button) => {
             button.addEventListener("click", () => {
                 const { indexer, stream } = sorted[Number(button.dataset.streamRow)];
@@ -229,14 +242,12 @@ export async function openStreamSearch({ indexers, selected, titleHint, fetcher 
     draw();
 }
 
-function renderStreamTable(rows, subtitles, statuses, qualityDir) {
+function renderStreamTable(rows, subtitles, statuses, sortKey, sortDir) {
     const statusBlock = renderStatusBlock(statuses);
 
     if (rows.length === 0) {
         return `${statusBlock}<div class="alert alert-warning mb-0">No streams found.</div>`;
     }
-
-    const toolbar = `<div class="d-flex flex-wrap gap-2 align-items-center mb-3">${qualitySortSelect(qualityDir)}</div>`;
 
     const streamRows = rows.map((row, index) => `
         <tr>
@@ -254,10 +265,9 @@ function renderStreamTable(rows, subtitles, statuses, qualityDir) {
 
     return `
         ${statusBlock}
-        ${toolbar}
         <div class="table-responsive">
             <table class="table table-dark table-hover align-middle">
-                <thead><tr><th>Quality</th><th>Indexer</th><th>URL</th><th></th></tr></thead>
+                ${sortableHead(STREAM_COLUMNS, sortKey, sortDir)}
                 <tbody>${streamRows}</tbody>
             </table>
         </div>
@@ -265,12 +275,12 @@ function renderStreamTable(rows, subtitles, statuses, qualityDir) {
 }
 
 // --- Season-wide stream search (all episodes at once) ----------------------
-export async function openSeasonStreamSearch({ indexers, selected, seriesName, seriesId, seasonNumber, episodes }) {
+export async function openSeasonStreamSearch({ indexers, seriesName, seriesId, seasonNumber, episodes }) {
     const { wrapper, modal } = makeModal(`Season ${seasonNumber} — ${seriesName}`, spinner("Searching all episodes for streams..."));
     modal.show();
     const body = wrapper.querySelector(".modal-body");
 
-    const targets = selected === "all" ? indexers.map((indexer) => indexer.name) : [selected];
+    const targets = indexers.map((indexer) => indexer.name);
 
     // One request per (episode, indexer); keep a parallel meta array so rejected promises stay attributable.
     const meta = [];
@@ -308,8 +318,8 @@ export async function openSeasonStreamSearch({ indexers, selected, seriesName, s
         detail: `${status.ok} stream(s)${status.failed ? `, ${status.failed} error(s)` : ""}`,
     }));
 
-    let qualityDir = "desc";
-    let episodeDir = "asc";
+    let sortKey = "episode";
+    let sortDir = "asc";
 
     const draw = () => {
         if (rows.length === 0) {
@@ -317,27 +327,16 @@ export async function openSeasonStreamSearch({ indexers, selected, seriesName, s
             return;
         }
 
-        const sorted = [...rows].sort((a, b) => {
-            if (a.episodeNumber !== b.episodeNumber) {
-                return (episodeDir === "asc" ? 1 : -1) * (a.episodeNumber - b.episodeNumber);
-            }
-            return (qualityDir === "asc" ? 1 : -1) * (qualityRank(a.stream.quality) - qualityRank(b.stream.quality));
-        });
+        const sorted = sortRows(rows, SEASON_COLUMNS, sortKey, sortDir);
 
         body.innerHTML = `
             ${renderStatusBlock(statuses)}
-            <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-                <label class="small text-secondary">Episode</label>
-                <select class="form-select form-select-sm w-auto" data-episode-sort aria-label="Sort by episode">
-                    <option value="asc"${episodeDir === "asc" ? " selected" : ""}>Ascending</option>
-                    <option value="desc"${episodeDir === "desc" ? " selected" : ""}>Descending</option>
-                </select>
-                ${qualitySortSelect(qualityDir)}
-                <button type="button" class="btn btn-sm btn-success ms-auto" data-download-all>Download all…</button>
+            <div class="d-flex justify-content-end mb-3">
+                <button type="button" class="btn btn-sm btn-success" data-download-all>Download all…</button>
             </div>
             <div class="table-responsive">
                 <table class="table table-dark table-hover align-middle">
-                    <thead><tr><th>Episode</th><th>Quality</th><th>Indexer</th><th>URL</th><th></th></tr></thead>
+                    ${sortableHead(SEASON_COLUMNS, sortKey, sortDir)}
                     <tbody>${sorted.map((row, index) => `
                         <tr>
                             <td>E${pad(row.episodeNumber)}</td>
@@ -349,13 +348,17 @@ export async function openSeasonStreamSearch({ indexers, selected, seriesName, s
                 </table>
             </div>`;
 
-        body.querySelector("[data-episode-sort]").addEventListener("change", (event) => {
-            episodeDir = event.target.value;
-            draw();
-        });
-        body.querySelector("[data-quality-sort]").addEventListener("change", (event) => {
-            qualityDir = event.target.value;
-            draw();
+        body.querySelectorAll("[data-sort-key]").forEach((header) => {
+            header.addEventListener("click", () => {
+                const key = header.dataset.sortKey;
+                if (sortKey === key) {
+                    sortDir = sortDir === "asc" ? "desc" : "asc";
+                } else {
+                    sortKey = key;
+                    sortDir = columnDefaultDir(SEASON_COLUMNS, key);
+                }
+                draw();
+            });
         });
         body.querySelector("[data-download-all]").addEventListener("click", () => {
             openBulkDownload({ rows, episodes, seriesName, seasonNumber });

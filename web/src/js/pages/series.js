@@ -1,9 +1,8 @@
 import { getSeries, getSeason, getIndexers, getEpisodeStreams } from "../api.js";
 import {
-    backdropStyle, posterImg, stillImg, yearOf, pad, escapeHtml, escapeAttr, spinner, errorAlert,
+    backdropStyle, posterImg, stillImg, yearOf, pad, escapeHtml, spinner, errorAlert,
     indexerActionsHtml, attachStreamSearch, openSeasonStreamSearch,
 } from "../ui.js";
-import { getLastIndexer, setLastIndexer } from "../store.js";
 
 export async function render(view, params) {
     const id = params[0];
@@ -112,38 +111,20 @@ function seasonToolbar(indexers) {
         return "";
     }
 
-    const options = indexers.map((indexer) => `<option value="${escapeAttr(indexer.name)}">${escapeHtml(indexer.name)}</option>`).join("");
-
     return `
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-3" data-season-toolbar>
-            <span class="small text-secondary">Fetch all episodes:</span>
-            <div class="input-group input-group-sm w-auto">
-                <select class="form-select" data-season-indexer aria-label="Indexer">${options}</select>
-                <button type="button" class="btn btn-outline-light" data-fetch-one>This indexer</button>
-            </div>
-            <button type="button" class="btn btn-primary btn-sm" data-fetch-all>All indexers</button>
+        <div class="d-flex justify-content-end mb-3" data-season-toolbar>
+            <button type="button" class="btn btn-primary btn-sm" data-season-search>Search</button>
         </div>`;
 }
 
 function wireSeasonToolbar(body, { indexers, seriesName, seriesId, seasonNumber, episodes }) {
-    const toolbar = body.querySelector("[data-season-toolbar]");
-    if (!toolbar) {
+    const button = body.querySelector("[data-season-search]");
+    if (!button) {
         return;
     }
 
-    const select = toolbar.querySelector("[data-season-indexer]");
-    const last = getLastIndexer();
-    if (last && indexers.some((indexer) => indexer.name === last)) {
-        select.value = last;
-    }
-
-    toolbar.querySelector("[data-fetch-one]").addEventListener("click", () => {
-        setLastIndexer(select.value);
-        openSeasonStreamSearch({ indexers, selected: select.value, seriesName, seriesId, seasonNumber, episodes });
-    });
-
-    toolbar.querySelector("[data-fetch-all]").addEventListener("click", () => {
-        openSeasonStreamSearch({ indexers, selected: "all", seriesName, seriesId, seasonNumber, episodes });
+    button.addEventListener("click", () => {
+        openSeasonStreamSearch({ indexers, seriesName, seriesId, seasonNumber, episodes });
     });
 }
 
