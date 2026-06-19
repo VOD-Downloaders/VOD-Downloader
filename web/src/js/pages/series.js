@@ -129,13 +129,13 @@ async function loadSeason(body, seriesId, seasonNumber, seriesName, indexers) {
 
 function episodeRow(episode, indexers) {
     return `
-        <div class="episode-row d-flex gap-3 py-3 border-bottom" data-episode="${episode.episode_number}">
+        <div class="episode-row d-flex gap-3 py-3 border-bottom align-items-center" data-episode="${episode.episode_number}">
             <img class="episode-still" src="${stillImg(episode.still_path)}" alt="" loading="lazy">
             <div class="flex-grow-1">
                 <div class="fw-semibold">${episode.episode_number}. ${escapeHtml(episode.name)}
                     <span class="small text-secondary ms-2">${escapeHtml(episode.air_date || "")}</span></div>
-                <p class="small text-secondary mb-2">${escapeHtml(episode.overview || "")}</p>
-                <div data-actions>${indexerActionsHtml(indexers)}</div>
+                <p class="small text-secondary mb-0">${escapeHtml(episode.overview || "")}</p>
             </div>
+            <div data-actions class="flex-shrink-0">${indexerActionsHtml(indexers)}</div>
         </div>`;
 }
