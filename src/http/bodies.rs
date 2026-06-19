@@ -155,6 +155,18 @@ impl IntoResponse for RefreshIndexerSpecificationsResponse {
 }
 
 #[derive(Serialize)]
+pub struct RefetchIndexerSpecificationsResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+}
+
+impl IntoResponse for RefetchIndexerSpecificationsResponse {
+    fn into_response(self) -> response::Response {
+        (self.status).into_response()
+    }
+}
+
+#[derive(Serialize)]
 pub struct SearchMovieResponse {
     #[serde(skip)]
     pub status: StatusCode,

@@ -181,6 +181,20 @@ pub async fn post_refresh_indexer_specifications(State(state): State<Arc<AppStat
     Ok(RefreshIndexerSpecificationsResponse { status: StatusCode::OK })
 }
 
+pub async fn post_refetch_indexer_specifications(State(state): State<Arc<AppState>>) -> Result<RefreshIndexerSpecificationsResponse, ErrorResponse> {
+    trace!("Received post_refetch_indexer_specifications");
+
+    state.state.write().await.refetch_indexer_specifications().await.map_err(|error| {
+        error!("Failed to refetch indexer specifications due to error: {}", error);
+        ErrorResponse {
+            status: StatusCode::FAILED_DEPENDENCY,
+            error: format!("Failed to refetch indexer specifictions due to error: {}", error),
+        }
+    })?;
+
+    Ok(RefreshIndexerSpecificationsResponse { status: StatusCode::OK })
+}
+
 pub async fn get_search_movie(
     State(_state): State<Arc<AppState>>, Query(query): Query<SearchMovieQuery>,
 ) -> Result<SearchMovieResponse, ErrorResponse> {
