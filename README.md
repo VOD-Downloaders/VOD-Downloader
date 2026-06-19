@@ -37,6 +37,8 @@ services:
       - 8080:8080
     restart: unless-stopped
 
+  # This container contains the actual decryption logic for all
+  # the backends and is seperate to keep the reverse-engineered code secret
   fmhy_bridge:
     image: ghcr.io/ggjorven/fmhy-bridge:latest
     container_name: fmhy_bridge
