@@ -32,16 +32,16 @@ impl NativeRequester {
     }
 
     pub async fn get_bytes(&self, url: &Url, headers: HeaderMap) -> Result<Vec<u8>, RequestError> {
-        let response = self
-            .client
-            .get(url.as_str())
-            .headers(headers.0)
-            .send()
-            .await
-            .map_err(|error| RequestError::RequestFailedToSend(error.to_string()))?;
+        let response = self.client.get(url.as_str()).headers(headers.0).send().await.map_err(|error| {
+            trace!("Request failed to send due to error: {}", error);
+            RequestError::RequestFailedToSend(error.to_string())
+        })?;
 
         if !response.status().is_success() {
-            return Err(RequestError::RequestFailed(format!("Status: {}, Error: {}", response.status(), response.error_for_status().unwrap_err())));
+            let status = response.status();
+            let error = response.error_for_status().unwrap_err();
+            trace!("Request failed, status: {}, error: {}", status, error);
+            return Err(RequestError::RequestFailed(format!("Status: {}, Error: {}", status, error,)));
         }
 
         match response.bytes().await {

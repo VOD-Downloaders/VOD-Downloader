@@ -71,7 +71,10 @@ pub async fn bridge_search_movie_streams(
     .unwrap();
     url.set_query(Some(parameters.as_str()));
 
-    let json_str = requester.get_string(&url, None).await?;
+    let json_str = requester.get_string(&url, None).await.map_err(|error| {
+        error!("Request to bridge failed, error: {}", error);
+        error
+    })?;
     let streams: Streams = serde_json::from_str(json_str.as_str())?;
 
     Ok(streams)
@@ -108,7 +111,10 @@ pub async fn bridge_search_episode_streams(
     .unwrap();
     url.set_query(Some(parameters.as_str()));
 
-    let json_str = requester.get_string(&url, None).await?;
+    let json_str = requester.get_string(&url, None).await.map_err(|error| {
+        error!("Request to bridge failed, error: {}", error);
+        error
+    })?;
     let streams: Streams = serde_json::from_str(json_str.as_str())?;
 
     Ok(streams)

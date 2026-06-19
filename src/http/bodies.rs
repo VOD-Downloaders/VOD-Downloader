@@ -1,10 +1,12 @@
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use axum::{
     response::{self, IntoResponse},
     http::StatusCode,
 };
 
-use crate::config::Indexer;
+use crate::{config::Indexer, download::DownloadStatus};
 use crate::config::IndexerSpecification;
 use crate::search::streams::Stream;
 use crate::search::streams::Streams;
@@ -15,6 +17,12 @@ use crate::search::info::*;
 /////////////////////////////////////////////////////
 #[derive(Debug, Deserialize)]
 pub struct CreateIndexerRequest {
+    pub indexer: Indexer,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateIndexerRequest {
+    pub old_name: String,
     pub indexer: Indexer,
 }
 
@@ -42,14 +50,6 @@ pub struct SearchMovieQuery {
 pub struct SearchSeriesQuery {
     pub name: String,
     pub page: i32,
-}
-
-/////////////////////////////////////////////////////
-// Paths
-/////////////////////////////////////////////////////
-#[derive(Deserialize)]
-pub struct DownloadStatusPath {
-    pub id: u32,
 }
 
 /////////////////////////////////////////////////////
@@ -94,12 +94,36 @@ impl IntoResponse for CreateIndexerResponse {
 }
 
 #[derive(Serialize)]
+pub struct UpdateIndexersResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+}
+
+impl IntoResponse for UpdateIndexersResponse {
+    fn into_response(self) -> response::Response {
+        (self.status).into_response()
+    }
+}
+
+#[derive(Serialize)]
 pub struct DeleteIndexerResponse {
     #[serde(skip)]
     pub status: StatusCode,
 }
 
 impl IntoResponse for DeleteIndexerResponse {
+    fn into_response(self) -> response::Response {
+        (self.status).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct RefreshIndexersResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+}
+
+impl IntoResponse for RefreshIndexersResponse {
     fn into_response(self) -> response::Response {
         (self.status).into_response()
     }
@@ -115,6 +139,30 @@ pub struct IndexerSpecificationsResponse {
 impl IntoResponse for IndexerSpecificationsResponse {
     fn into_response(self) -> response::Response {
         (self.status, response::Json(self)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct RefreshIndexerSpecificationsResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+}
+
+impl IntoResponse for RefreshIndexerSpecificationsResponse {
+    fn into_response(self) -> response::Response {
+        (self.status).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct RefetchIndexerSpecificationsResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+}
+
+impl IntoResponse for RefetchIndexerSpecificationsResponse {
+    fn into_response(self) -> response::Response {
+        (self.status).into_response()
     }
 }
 
@@ -269,6 +317,22 @@ pub struct StartDownloadResponse {
 }
 
 impl IntoResponse for StartDownloadResponse {
+    fn into_response(self) -> response::Response {
+        (self.status, response::Json(self)).into_response()
+    }
+}
+
+#[derive(Serialize)]
+pub struct DownloadInfoResponse {
+    #[serde(skip)]
+    pub status: StatusCode,
+    pub start_time: u64,
+    pub end_time: Option<u64>,
+    pub output_file: PathBuf,
+    pub download_status: DownloadStatus,
+}
+
+impl IntoResponse for DownloadInfoResponse {
     fn into_response(self) -> response::Response {
         (self.status, response::Json(self)).into_response()
     }

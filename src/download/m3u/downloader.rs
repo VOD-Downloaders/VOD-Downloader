@@ -1,24 +1,30 @@
 use url::Url;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
+use tokio::sync::RwLock;
 
-use crate::download::DownloadError;
 use crate::config;
 use crate::request;
+use crate::download::DownloadError;
+use crate::download::DownloadStatus;
 
 /////////////////////////////////////////////////////
 // Download
 /////////////////////////////////////////////////////
 pub async fn download_segments(
-    indexer: &config::Indexer, segments: Vec<Url>, requester: &request::Requester, output_file: &mut File,
+    indexer: &config::Indexer, segments: Vec<Url>, requester: &request::Requester, output_file: &mut File, status: &RwLock<DownloadStatus>,
 ) -> Result<(), DownloadError> {
     trace!("Starting segments download...");
 
-    for segment in segments {
-        trace!("Downloading segment from: \"{}\"...", segment);
+    for (i, segment) in segments.iter().enumerate() {
+        trace!("Downloading segment #{} from: \"{}\"...", i, segment);
+
+        *status.write().await = DownloadStatus::DownloadingSegments {
+            amount: i as u32,
+            total: segments.len() as u32,
+        };
 
         let mut last_error: Option<DownloadError> = None;
-
         for attempt in 1..=indexer.download.segment_download.segment_attempts {
             match download_segment(indexer, &segment, requester, output_file).await {
                 Ok(_) => {

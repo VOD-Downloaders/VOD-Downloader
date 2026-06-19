@@ -1,10 +1,14 @@
 import {
-    getIndexers, getSpecifications, refreshSpecifications, createIndexer, deleteIndexer,
+    getIndexers, getSpecifications, refetchSpecifications, reloadSpecifications, reloadIndexers, createIndexer, updateIndexer, deleteIndexer,
 } from "../api.js";
 import { escapeHtml, escapeAttr, errorAlert, spinner, toast } from "../ui.js";
 
 let specs = [];
 let indexers = [];
+
+// Name of the indexer currently being edited, or null when creating a new one. Drives whether the
+// form submit hits the update endpoint (with old_name) or the create endpoint.
+let editingName = null;
 
 // Template carried into the form for the current edit/create. The non-tunable parts of an indexer
 // (algorithm_name, search, stream, based_on, segment headers) come straight from the chosen
@@ -26,7 +30,10 @@ export async function render(view) {
         <div class="container-fluid p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0">Indexers</h1>
-                <button class="btn btn-outline-light" data-refresh-specs>Refresh specifications</button>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-light" data-reload-disk>Reload indexers</button>
+                    <button class="btn btn-outline-light" data-refresh-specs>Update specifications</button>
+                </div>
             </div>
             <div class="row g-4">
                 <div class="col-lg-5">
@@ -46,6 +53,7 @@ export async function render(view) {
         </div>`;
 
     wireRefresh(view);
+    wireReload(view);
     wireForm(view);
     populateSpecSelect(view);
     renderTable(view);
@@ -177,9 +185,32 @@ function wireRefresh(view) {
         button.textContent = "Refreshing...";
 
         try {
-            specs = await refreshSpecifications();
+            await refetchSpecifications();
+            specs = await getSpecifications();
             populateSpecSelect(view);
             toast("Specifications refreshed.");
+        } catch (error) {
+            view.querySelector("[data-form-error]").innerHTML = errorAlert(error.message);
+        } finally {
+            button.disabled = false;
+            button.textContent = original;
+        }
+    });
+}
+
+function wireReload(view) {
+    const button = view.querySelector("[data-reload-disk]");
+    button.addEventListener("click", async () => {
+        const original = button.textContent;
+        button.disabled = true;
+        button.textContent = "Reloading...";
+
+        try {
+            await Promise.all([reloadIndexers(), reloadSpecifications()]);
+            [indexers, specs] = await Promise.all([getIndexers(), getSpecifications()]);
+            renderTable(view);
+            populateSpecSelect(view);
+            toast("Reloaded indexers from disk.");
         } catch (error) {
             view.querySelector("[data-form-error]").innerHTML = errorAlert(error.message);
         } finally {
@@ -217,7 +248,11 @@ function wireForm(view) {
         }
 
         try {
-            await createIndexer(indexer);
+            if (editingName) {
+                await updateIndexer(editingName, indexer);
+            } else {
+                await createIndexer(indexer);
+            }
             toast(`Saved indexer "${indexer.name}".`);
             indexers = await getIndexers();
             renderTable(view);
@@ -259,6 +294,7 @@ function resetForm(view) {
     const form = view.querySelector("[data-indexer-form]");
     form.reset();
     formBase = null;
+    editingName = null;
     view.querySelector("#spec-select").value = "";
     view.querySelector("#indexer-server").innerHTML = "";
     view.querySelector("[data-server-description]").textContent = "";
@@ -310,6 +346,7 @@ function loadForEdit(view, name) {
     }
 
     const form = view.querySelector("[data-indexer-form]");
+    editingName = indexer.name;
     view.querySelector("[data-form-title]").textContent = `Edit indexer: ${indexer.name}`;
 
     // Prefer the source specification's server list so other servers stay selectable; fall back to

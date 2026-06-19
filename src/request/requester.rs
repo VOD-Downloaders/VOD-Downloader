@@ -10,7 +10,7 @@ use super::HeaderMap;
 /////////////////////////////////////////////////////
 // RequestError
 /////////////////////////////////////////////////////
-#[derive(Debug, Error)]
+#[derive(Debug, Clone, Error)]
 pub enum RequestError {
     #[error("Failed to create requester, error: {0}")]
     FailedToCreate(String),

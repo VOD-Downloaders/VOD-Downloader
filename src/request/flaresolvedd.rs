@@ -173,9 +173,15 @@ impl FlaresolveddRequester {
                 .post(self.flaresolverr_url.as_str())
                 .json(&request_command)
                 .send()
-                .map_err(|error| RequestError::RequestFailedToSend(error.to_string()))?
+                .map_err(|error| {
+                    trace!("Request failed to send due to error: {}", error);
+                    RequestError::RequestFailedToSend(error.to_string())
+                })?
                 .json()
-                .map_err(|error| RequestError::RequestFailed(error.to_string()))?;
+                .map_err(|error| {
+                    trace!("Request failed due to error: {}", error);
+                    RequestError::RequestFailed(error.to_string())
+                })?;
 
             if let Some(solution) = response.solution {
                 Ok(solution.response.into_bytes())
@@ -193,11 +199,10 @@ impl FlaresolveddRequester {
                 .map_err(|error| RequestError::RequestFailedToSend(error.to_string()))?;
 
             if !response.status().is_success() {
-                return Err(RequestError::RequestFailed(format!(
-                    "Status: {}, Error: {}",
-                    response.status(),
-                    response.error_for_status().unwrap_err()
-                )));
+                let status = response.status();
+                let error = response.error_for_status().unwrap_err();
+                trace!("Request failed, status: {}, error: {}", status, error);
+                return Err(RequestError::RequestFailed(format!("Status: {}, Error: {}", status, error,)));
             }
 
             match response.bytes() {
