@@ -52,6 +52,10 @@ export async function refreshSpecifications() {
     return data.indexers;
 }
 
+export function reloadIndexers() {
+    return request("/api/indexers/refresh", { method: "POST" });
+}
+
 export function createIndexer(indexer) {
     return request("/api/indexers/create", jsonPost({ indexer }));
 }
@@ -97,4 +101,8 @@ export function getEpisodeStreams(indexer, id, seasonNumber, episodeNumber) {
 // Download
 export function startDownload(indexer, payload) {
     return request(`/api/download/indexer/${encodeURIComponent(indexer)}`, jsonPost(payload));
+}
+
+export function getDownloadInfo(id) {
+    return request(`/api/download/${encodeURIComponent(id)}`);
 }

@@ -278,8 +278,14 @@ export function openDownloadModal({ indexer, stream, titleHint }) {
         try {
             const result = await startDownload(indexer, { stream, output_file: outputFile });
             addDownload({ id: result.id, output_file: outputFile, indexer, quality: stream.quality || "", ts: Date.now() });
-            modal.hide();
             toast(`Download started (id ${result.id}).`);
+
+            wrapper.querySelector(".modal-body").innerHTML = `
+                <div class="alert alert-success mb-3">Download started (id ${escapeHtml(String(result.id))}).</div>
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <a href="#/downloads" class="btn btn-primary" data-bs-dismiss="modal">View downloads</a>
+                </div>`;
         } catch (error) {
             startButton.disabled = false;
             errorBox.innerHTML = errorAlert(error.message);

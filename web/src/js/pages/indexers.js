@@ -1,5 +1,5 @@
 import {
-    getIndexers, getSpecifications, refreshSpecifications, createIndexer, deleteIndexer,
+    getIndexers, getSpecifications, refreshSpecifications, reloadIndexers, createIndexer, deleteIndexer,
 } from "../api.js";
 import { escapeHtml, escapeAttr, errorAlert, spinner, toast } from "../ui.js";
 
@@ -26,7 +26,10 @@ export async function render(view) {
         <div class="container-fluid p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0">Indexers</h1>
-                <button class="btn btn-outline-light" data-refresh-specs>Refresh specifications</button>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-light" data-reload-disk>Reload indexers</button>
+                    <button class="btn btn-outline-light" data-refresh-specs>Refresh specifications</button>
+                </div>
             </div>
             <div class="row g-4">
                 <div class="col-lg-5">
@@ -46,6 +49,7 @@ export async function render(view) {
         </div>`;
 
     wireRefresh(view);
+    wireReload(view);
     wireForm(view);
     populateSpecSelect(view);
     renderTable(view);
@@ -180,6 +184,27 @@ function wireRefresh(view) {
             specs = await refreshSpecifications();
             populateSpecSelect(view);
             toast("Specifications refreshed.");
+        } catch (error) {
+            view.querySelector("[data-form-error]").innerHTML = errorAlert(error.message);
+        } finally {
+            button.disabled = false;
+            button.textContent = original;
+        }
+    });
+}
+
+function wireReload(view) {
+    const button = view.querySelector("[data-reload-disk]");
+    button.addEventListener("click", async () => {
+        const original = button.textContent;
+        button.disabled = true;
+        button.textContent = "Reloading...";
+
+        try {
+            await reloadIndexers();
+            indexers = await getIndexers();
+            renderTable(view);
+            toast("Reloaded indexers from disk.");
         } catch (error) {
             view.querySelector("[data-form-error]").innerHTML = errorAlert(error.message);
         } finally {
