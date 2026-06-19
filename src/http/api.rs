@@ -145,7 +145,7 @@ pub async fn post_delete_indexer(
 }
 
 pub async fn post_refresh_indexers(State(state): State<Arc<AppState>>) -> Result<RefreshIndexersResponse, ErrorResponse> {
-    trace!("Received get_indexer_specifications");
+    trace!("Received post_refresh_indexers");
 
     state.state.write().await.refresh_indexers().await.map_err(|error| {
         error!("Failed to refresh indexers due to error: {}", error);
