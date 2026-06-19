@@ -181,7 +181,7 @@ pub async fn post_refresh_indexer_specifications(State(state): State<Arc<AppStat
     Ok(RefreshIndexerSpecificationsResponse { status: StatusCode::OK })
 }
 
-pub async fn post_refetch_indexer_specifications(State(state): State<Arc<AppState>>) -> Result<RefreshIndexerSpecificationsResponse, ErrorResponse> {
+pub async fn post_refetch_indexer_specifications(State(state): State<Arc<AppState>>) -> Result<RefetchIndexerSpecificationsResponse, ErrorResponse> {
     trace!("Received post_refetch_indexer_specifications");
 
     state.state.write().await.refetch_indexer_specifications().await.map_err(|error| {
@@ -192,7 +192,7 @@ pub async fn post_refetch_indexer_specifications(State(state): State<Arc<AppStat
         }
     })?;
 
-    Ok(RefreshIndexerSpecificationsResponse { status: StatusCode::OK })
+    Ok(RefetchIndexerSpecificationsResponse { status: StatusCode::OK })
 }
 
 pub async fn get_search_movie(
