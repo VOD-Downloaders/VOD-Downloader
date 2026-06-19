@@ -144,19 +144,3 @@ pub async fn tmdb_get_series_external_ids(series_id: u32, requester: &request::R
 
     tmdb_run_api_call::<SeriesExternalIDsBody>(&url, requester).await
 }
-
-pub async fn tmdb_get_season_external_ids(series_id: u32, season_number: u32, requester: &request::Requester) -> SeasonExternalIDsBody {
-    let api_call = format!("{}/tv/{}/season/{}/external_ids", TMDB_API_URL, series_id, season_number);
-    let url = Url::parse(api_call.as_str()).unwrap();
-
-    tmdb_run_api_call::<SeasonExternalIDsBody>(&url, requester).await
-}
-
-pub async fn tmdb_get_episode_external_ids(
-    series_id: u32, season_number: u32, episode_number: u32, requester: &request::Requester,
-) -> EpisodeExternalIDsBody {
-    let api_call = format!("{}/tv/{}/season/{}/episode/{}/external_ids", TMDB_API_URL, series_id, season_number, episode_number);
-    let url = Url::parse(api_call.as_str()).unwrap();
-
-    tmdb_run_api_call::<EpisodeExternalIDsBody>(&url, requester).await
-}

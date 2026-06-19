@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 use tokio::fs::OpenOptions;
+use tokio::sync::RwLock;
 
 use crate::config;
 use crate::request;
@@ -11,11 +12,12 @@ use crate::streams::DownloadableStream;
 use crate::streams::DownloadableStreamType;
 
 use super::m3u;
+use super::DownloadStatus;
 
 /////////////////////////////////////////////////////
 // DownloadError
 /////////////////////////////////////////////////////
-#[derive(Debug, Error)]
+#[derive(Debug, Clone, Error)]
 pub enum DownloadError {
     #[error("Failed to open output file \"{file}\" with error: {error}", file = file.display())]
     FailedToOpenOutputFile { file: PathBuf, error: String },
@@ -29,7 +31,7 @@ pub enum DownloadError {
 // Downloader
 /////////////////////////////////////////////////////
 pub async fn download_stream(
-    indexer: &config::Indexer, stream: DownloadableStream, requester: &request::Requester, output_file: &Path,
+    indexer: &config::Indexer, stream: DownloadableStream, requester: &request::Requester, output_file: &Path, status: &RwLock<DownloadStatus>,
 ) -> Result<(), DownloadError> {
     trace!("Downloading stream of resolution: {}.", stream.resolution);
 
@@ -48,10 +50,24 @@ pub async fn download_stream(
     trace!("File \"{}\" successfully opened.", output_file.display());
 
     // Download based of of stream_type
-    match stream.stream_type {
-        DownloadableStreamType::Segments(segments) => m3u::download_segments(indexer, segments, requester, &mut file).await,
+    let result = match stream.stream_type {
+        DownloadableStreamType::Segments(segments) => m3u::download_segments(indexer, segments, requester, &mut file, status).await,
         DownloadableStreamType::Mp4(_url) => {
             todo!()
         },
+    };
+
+    // Set status
+    match result.clone() {
+        Ok(_) => {
+            trace!("Download finished successfully.");
+            *status.write().await = DownloadStatus::Finished;
+        },
+        Err(error) => {
+            trace!("Download finished unsuccessfully, error: {}.", error);
+            *status.write().await = DownloadStatus::Failed(error.to_string());
+        },
     }
+
+    result
 }
