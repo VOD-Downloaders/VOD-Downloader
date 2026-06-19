@@ -82,7 +82,7 @@ For more configuration options check out [CONFIGURATION.md](./doc/CONFIGURATION.
 The WebUI is served on [`http://localhost:8080`](http://localhost:8080) (or the port set with `WEBUI_PORT`). Use the sidebar to navigate. A typical run:
 
 1. **Indexers** - Create an indexer from a specification and pick a server. Specifications are fetched from the [VOD-Downloaders/FMHY-Indexers](https://github.com/VOD-Downloaders/FMHY-Indexers)
-   repository. Hit **Update specifications** to pull the latest.
+   repository. Hit **Update specifications** to re-fetch the latest from GitHub, or **Reload indexers** to reload your active indexers and specifications from disk.
 2. **Search** - Search TMDB for a movie or series and open its details page.
 3. **Streams** - On the details page, pick an indexer to list available streams, then start a download. Finished files land in the `/output` directory.
 4. **Downloads** - Shows the downloads you've started from this browser.
