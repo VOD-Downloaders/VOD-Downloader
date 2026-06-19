@@ -289,7 +289,7 @@ pub struct EpisodeBody {
     pub runtime: Option<u32>,
     pub season_number: u32,
     pub show_id: u32,
-    pub still_path: String,
+    pub still_path: Option<String>,
     // pub vote_average: f32,
     // pub vote_count: u32,
     pub crew: Vec<CrewBody>,
