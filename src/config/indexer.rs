@@ -44,6 +44,8 @@ pub struct Indexer {
     pub algorithm_name: String,
     pub server: IndexerServer,
 
+    pub priority: u8,
+
     pub uses_cloudflare: bool,
 
     pub search: SearchSpecification,
