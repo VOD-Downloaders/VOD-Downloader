@@ -49,7 +49,7 @@ pub enum DownloadOrder {
 /////////////////////////////////////////////////////
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadSpecification {
-    pub max_requests: u32, // Max requests per second
+    pub max_requests: u32, // Per second
     pub order: DownloadOrder,
     pub segment_download: SegmentDownloadSpecifiation,
     pub segment_post_download: SegmentPostDownloadSpecification,

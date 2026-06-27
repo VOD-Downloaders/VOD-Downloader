@@ -8,6 +8,7 @@ use serde::{Serialize, Deserialize};
 pub enum DownloadableStreamType {
     Segments(Vec<Url>),
     Mp4(Url),
+    // TODO: Video, Audio
 }
 
 impl Default for DownloadableStreamType {
