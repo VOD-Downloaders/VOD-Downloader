@@ -15,6 +15,7 @@ services:
 
   # This container contains the actual decryption logic for all
   # the backends and is seperate to keep the reverse-engineered code secret
+  # and prevent DMCA strikes
   fmhy_bridge:
     image: ghcr.io/ggjorven/fmhy-bridge:latest
     container_name: fmhy_bridge
