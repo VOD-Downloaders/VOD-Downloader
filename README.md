@@ -10,7 +10,6 @@ A docker container for downloading VODs off of certain [freemediaheckyeah](https
 - VOD Indexing from various [freemediaheckyeah](https://fmhy.net/video) sites (actually their backends).
 - (Bulk) VOD Downloading from [freemediaheckyeah](https://fmhy.net/video) sites.
 - Easy navigatable WebUI
-- VOD Validation // TODO
 - Prowlarr indexer API // TODO
 
 ## Installation
