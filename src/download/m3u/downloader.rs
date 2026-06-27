@@ -26,7 +26,7 @@ pub async fn download_segments(
 
         let mut last_error: Option<DownloadError> = None;
         for attempt in 1..=indexer.download.segment_download.segment_attempts {
-            match download_segment(indexer, &segment, requester, output_file).await {
+            match download_segment(indexer, segment, requester, output_file).await {
                 Ok(_) => {
                     last_error = None;
                     break;

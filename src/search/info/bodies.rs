@@ -82,22 +82,22 @@ pub struct GenreBody {
 /////////////////////////////////////////////////////
 // ProductionCompanyBody
 /////////////////////////////////////////////////////
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct ProductionCompanyBody {
-    pub id: u32,
-    pub logo_path: Option<String>,
-    pub name: String,
-    pub origin_country: String,
-}
+// #[derive(Debug, Default, Serialize, Deserialize)]
+// pub struct ProductionCompanyBody {
+//     pub id: u32,
+//     pub logo_path: Option<String>,
+//     pub name: String,
+//     pub origin_country: String,
+// }
 
 /////////////////////////////////////////////////////
 // ProductionCountryBody
 /////////////////////////////////////////////////////
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct ProductionCountryBody {
-    pub iso_3166_1: String,
-    pub name: String,
-}
+// #[derive(Debug, Default, Serialize, Deserialize)]
+// pub struct ProductionCountryBody {
+//     pub iso_3166_1: String,
+//     pub name: String,
+// }
 
 /////////////////////////////////////////////////////
 // SpokenLanguageBody
@@ -366,27 +366,27 @@ pub struct SeriesExternalIDsBody {
 /////////////////////////////////////////////////////
 // SeasonExternalIDsBody
 /////////////////////////////////////////////////////
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct SeasonExternalIDsBody {
-    pub id: u32,
-    pub imdb_id: String,
-    // pub freebase_mid: String,
-    // pub freebase_id: String,
-    // pub tvdb_id: u32,
-    // pub tvrage_id: u32,
-    // pub wikidata_id: String,
-}
+// #[derive(Debug, Default, Serialize, Deserialize)]
+// pub struct SeasonExternalIDsBody {
+//     pub id: u32,
+//     pub imdb_id: String,
+//     // pub freebase_mid: String,
+//     // pub freebase_id: String,
+//     // pub tvdb_id: u32,
+//     // pub tvrage_id: u32,
+//     // pub wikidata_id: String,
+// }
 
 /////////////////////////////////////////////////////
 // EpisodeExternalIDsBody
 /////////////////////////////////////////////////////
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct EpisodeExternalIDsBody {
-    pub id: u32,
-    pub imdb_id: String,
-    // pub freebase_mid: String,
-    // pub freebase_id: String,
-    // pub tvdb_id: u32,
-    // pub tvrage_id: u32,
-    // pub wikidata_id: String,
-}
+// #[derive(Debug, Default, Serialize, Deserialize)]
+// pub struct EpisodeExternalIDsBody {
+//     pub id: u32,
+//     pub imdb_id: String,
+//     // pub freebase_mid: String,
+//     // pub freebase_id: String,
+//     // pub tvdb_id: u32,
+//     // pub tvrage_id: u32,
+//     // pub wikidata_id: String,
+// }
