@@ -271,32 +271,6 @@ impl IntoResponse for GetSeriesExternalIDsResponse {
 }
 
 #[derive(Serialize)]
-pub struct GetSeasonExternalIDsResponse {
-    #[serde(skip)]
-    pub status: StatusCode,
-    pub response: SeasonExternalIDsBody,
-}
-
-impl IntoResponse for GetSeasonExternalIDsResponse {
-    fn into_response(self) -> response::Response {
-        (self.status, response::Json(self.response)).into_response()
-    }
-}
-
-#[derive(Serialize)]
-pub struct GetEpisodeExternalIDsResponse {
-    #[serde(skip)]
-    pub status: StatusCode,
-    pub response: EpisodeExternalIDsBody,
-}
-
-impl IntoResponse for GetEpisodeExternalIDsResponse {
-    fn into_response(self) -> response::Response {
-        (self.status, response::Json(self.response)).into_response()
-    }
-}
-
-#[derive(Serialize)]
 pub struct StreamsResponse {
     #[serde(skip)]
     pub status: StatusCode,

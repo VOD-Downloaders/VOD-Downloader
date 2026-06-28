@@ -27,7 +27,7 @@ pub async fn convert_search_stream_to_downloadable(
 ) -> Result<DownloadableStream, ConversionError> {
     match indexer.stream.stream_type {
         config::StreamType::Index => m3u::create_stream(indexer, requester, stream).await,
-        config::StreamType::Mp4 => {
+        _ => {
             todo!()
         },
     }

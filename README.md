@@ -10,7 +10,6 @@ A docker container for downloading VODs off of certain [freemediaheckyeah](https
 - VOD Indexing from various [freemediaheckyeah](https://fmhy.net/video) sites (actually their backends).
 - (Bulk) VOD Downloading from [freemediaheckyeah](https://fmhy.net/video) sites.
 - Easy navigatable WebUI
-- VOD Validation // TODO
 - Prowlarr indexer API // TODO
 
 ## Installation
@@ -39,6 +38,8 @@ services:
 
   # This container contains the actual decryption logic for all
   # the backends and is seperate to keep the reverse-engineered code secret
+  # and prevent DMCA strikes. The public documentation of this repository can be found here:
+  # https://github.com/VOD-Downloaders/FMHY-Bridge
   fmhy_bridge:
     image: ghcr.io/ggjorven/fmhy-bridge:latest
     container_name: fmhy_bridge

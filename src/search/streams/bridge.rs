@@ -49,9 +49,9 @@ pub async fn bridge_search_movie_streams(
         .unwrap();
     let headers = {
         let mut headers = indexer.search.headers.clone();
-        if let Some(server_headers) = &indexer.server.headers {
+        if let Some(server_stream) = &indexer.server.stream {
             // Make the serverside headers override the global headers
-            for (key, value) in server_headers {
+            for (key, value) in &server_stream.headers {
                 headers.insert(key.clone(), value.clone());
             }
         }
@@ -89,9 +89,9 @@ pub async fn bridge_search_episode_streams(
         .unwrap();
     let headers = {
         let mut headers = indexer.search.headers.clone();
-        if let Some(server_headers) = &indexer.server.headers {
+        if let Some(server_stream) = &indexer.server.stream {
             // Make the serverside headers override the global headers
-            for (key, value) in server_headers {
+            for (key, value) in &server_stream.headers {
                 headers.insert(key.clone(), value.clone());
             }
         }

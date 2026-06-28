@@ -15,6 +15,8 @@ services:
 
   # This container contains the actual decryption logic for all
   # the backends and is seperate to keep the reverse-engineered code secret
+  # and prevent DMCA strikes. The public documentation of this repository can be found here:
+  # https://github.com/VOD-Downloaders/FMHY-Bridge
   fmhy_bridge:
     image: ghcr.io/ggjorven/fmhy-bridge:latest
     container_name: fmhy_bridge

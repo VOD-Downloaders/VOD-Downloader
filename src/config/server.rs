@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-
 use url::Url;
 use serde::{Serialize, Deserialize};
+
+use crate::config::{StreamSpecification, DownloadSpecification};
 
 /////////////////////////////////////////////////////
 // IndexerServer
@@ -11,5 +11,7 @@ pub struct IndexerServer {
     pub name: String,
     pub description: String,
     pub search_url: Url,
-    pub headers: Option<HashMap<String, String>>,
+
+    pub stream: Option<StreamSpecification>,
+    pub download: Option<DownloadSpecification>,
 }

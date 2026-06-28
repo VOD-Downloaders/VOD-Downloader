@@ -22,10 +22,8 @@ Below are the crates used in this project:
 | [rand](https://crates.io/crates/rand) | 0.10 | MIT / Apache-2.0 | Random number generator |
 | [url](https://crates.io/crates/url) | 2.5 | MIT / Apache-2.0 | Rust implementation of the URL standard. |
 | [async_trait](https://crates.io/crates/async_trait) | 0.1 | MIT / Apache-2.0 | Allow async functions in traits |
-| [chromiumoxide](https://crates.io/crates/chromiumoxide) | 0.9 | MIT / Apache-2.0 | A high-level API for interacting with the Chrome DevTools. |
 | [futures](https://crates.io/crates/futures) | 0.3 | MIT / Apache-2.0 | Abstractions for asynchronous programming. |
 | [reqwest](https://crates.io/crates/reqwest) | 0.13 | MIT / Apache-2.0 | Blocking HTTP client for Dispatcharr API communication |
-| [symphonia](https://crates.io/crates/symphonia) | 0.6 | MPL-2.0 | Audio/video container handling (MKV, MP4/ISO) |
 
 ## Web
 

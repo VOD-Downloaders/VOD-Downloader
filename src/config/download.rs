@@ -37,11 +37,24 @@ impl Default for SegmentPostDownloadSpecification {
     }
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum DownloadOrder {
+    Sequential,
+    #[default]
+    Parallel,
+}
+
 /////////////////////////////////////////////////////
 // DownloadSpecification
 /////////////////////////////////////////////////////
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DownloadSpecification {
+    pub max_requests: Option<u32>, // Per second, None = unlimited
+    #[serde(default)]
+    pub order: DownloadOrder,
+    #[serde(default)]
     pub segment_download: SegmentDownloadSpecifiation,
+    #[serde(default)]
     pub segment_post_download: SegmentPostDownloadSpecification,
 }

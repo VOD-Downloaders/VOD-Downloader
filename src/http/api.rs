@@ -32,6 +32,7 @@ pub struct AppState {
     pub state: RwLock<config::State>,
     pub environment: env::EnvOptions, // readonly
     pub downloads: RwLock<HashMap<u32, Arc<download::DownloadInfo> /* readonly */>>,
+    pub scheduler: download::DownloadScheduler,
 }
 
 impl AppState {
@@ -40,6 +41,7 @@ impl AppState {
             state: RwLock::new(state),
             environment: environment,
             downloads: RwLock::new(HashMap::new()),
+            scheduler: download::DownloadScheduler::new(),
         }
     }
 }
@@ -493,22 +495,35 @@ pub async fn post_start_download(
     let output_file = PathBuf::from(OUTPUT_DIRECTORY).join(PathBuf::from(payload.output_file));
     let download_info = Arc::new(download::DownloadInfo::new(output_file.as_path()));
     let download_info_clone = Arc::clone(&download_info);
+    let state_clone = Arc::clone(&state);
     tokio::spawn(async move {
+        // Convert stream to downloadable stream
         *download_info_clone.status.write().await = download::DownloadStatus::Converting;
-        let stream_result = streams::convert_search_stream_to_downloadable(&indexer, &requester, payload.stream).await;
+        let downloadable = match streams::convert_search_stream_to_downloadable(&indexer, &requester, payload.stream).await {
+            Ok(downloadable) => downloadable,
+            Err(error) => {
+                error!("Failed to convert stream to a downloadable object, error: {}", error);
+                *download_info_clone.status.write().await = download::DownloadStatus::Failed(error.to_string());
+                *download_info_clone.end_time.write().await = Some(Utc::now());
+                return;
+            },
+        };
 
-        if let Err(error) = stream_result {
-            error!("Failed to convert stream to a downloadable object, error: {}", error);
-            return;
-        }
+        // Wait for a download slot for this host
+        let host = downloadable.rate_limit_host();
+        *download_info_clone.status.write().await = download::DownloadStatus::Queued;
+        let _permit = state_clone.scheduler.acquire(host.as_str(), &indexer.download.order).await;
 
-        let download_result =
-            download::download_stream(&indexer, stream_result.unwrap(), &requester, output_file.as_path(), &download_info_clone.status).await;
+        // Start the actual download
+        *download_info_clone.status.write().await = download::DownloadStatus::Starting;
+        let download_result = download::download_stream(&indexer, downloadable, &requester, output_file.as_path(), &download_info_clone.status).await;
         *download_info_clone.end_time.write().await = Some(Utc::now());
 
         if let Err(error) = download_result {
             error!("Download failed due to error: {}", error);
         }
+
+        // _permit drops here, letting the next queued download for this host proceed.
     });
 
     let id = rand::random::<u32>();
