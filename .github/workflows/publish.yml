@@ -5,6 +5,8 @@ on:
     types: [published]
   schedule: # tags: nightly
     - cron: '0 0 * * *'
+  push: # tags: nightly
+    branches: [dev]
 
 jobs:
   publish:
@@ -37,7 +39,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
             type=raw,value=latest,enable=${{ github.event_name == 'release' && !contains(github.ref_name, '-') }}
-            type=raw,value=nightly,enable=${{ github.event_name == 'schedule' }}
+            type=raw,value=nightly,enable=${{ github.event_name == 'schedule' || github.event_name == 'push' }}
 
       - name: Build and push image
         uses: docker/build-push-action@v7
