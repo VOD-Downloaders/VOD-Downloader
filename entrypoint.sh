@@ -47,4 +47,4 @@ if [ $CHOWN_OUTPUT ]; then
 fi
 
 # --- Drop privileges ---
-exec gosu "$PUID:$PGID" "$@"
+exec su-exec "$PUID:$PGID" "$@"
