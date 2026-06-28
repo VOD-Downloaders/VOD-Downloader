@@ -1,7 +1,7 @@
 name: Publish
 
 on:
-  release: # tags: latest & vX.X.X
+  release: # tags: latest & vX.X.X...
     types: [published]
   schedule: # tags: nightly
     - cron: '0 0 * * *'
@@ -37,7 +37,9 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=semver,pattern={{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern=v{{version}},enable=${{ github.event_name == 'release' }}
+            type=semver,pattern=v{{major}}.{{minor}},enable=${{ github.event_name == 'release' && !contains(github.ref_name, '-') }}
+            type=semver,pattern=v{{major}},enable=${{ github.event_name == 'release' && !contains(github.ref_name, '-') }}
             type=raw,value=latest,enable=${{ github.event_name == 'release' && !contains(github.ref_name, '-') }}
             type=raw,value=nightly,enable=${{ github.event_name == 'schedule' || github.event_name == 'push' }}
 
