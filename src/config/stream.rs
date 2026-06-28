@@ -25,5 +25,6 @@ pub enum StreamType {
 pub struct StreamSpecification {
     #[serde(rename = "type")]
     pub stream_type: StreamType,
+    #[serde(default)]
     pub headers: HashMap<String, String>,
 }
