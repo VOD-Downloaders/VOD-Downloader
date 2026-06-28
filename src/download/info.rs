@@ -9,8 +9,9 @@ use tokio::sync::RwLock;
 /////////////////////////////////////////////////////
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DownloadStatus {
-    Pending,
+    Queued,
     Converting,
+    Starting,
     DownloadingSegments { amount: u32, total: u32 },
     // TODO: MP4
     Finished,
@@ -34,7 +35,7 @@ impl DownloadInfo {
             start_time: Utc::now(),
             end_time: RwLock::new(None),
             output_file: output_file.to_path_buf(),
-            status: RwLock::new(DownloadStatus::Pending),
+            status: RwLock::new(DownloadStatus::Queued),
         }
     }
 }
