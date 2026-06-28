@@ -59,6 +59,23 @@ component-sidebar {
     background-color: #0d6efd;
 }
 
+/* Indexer form sections */
+
+.indexer-section {
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.indexer-section-divider {
+    border-top: 1px solid #2b3035;
+    padding-top: 1.25rem;
+}
+
+.letter-spacing-1 {
+    letter-spacing: 0.06em;
+}
+
 /* Search result cards */
 
 .result-card {

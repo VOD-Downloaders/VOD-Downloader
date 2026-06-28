@@ -1,18 +1,17 @@
 ###############################################################################
 # Install rust dependencies once (reused)
 ###############################################################################
-FROM rust:slim-bookworm AS chef
- 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    ca-certificates \
-    curl \
-    libssl-dev \
-    pkg-config \
-    protobuf-compiler \
-    && rm -rf /var/lib/apt/lists/* \
+FROM rust:alpine AS chef
+
+RUN apk add --no-cache \
+        build-base \
+        ca-certificates \
+        curl \
+        musl-dev \
+        protoc \
+        protobuf-dev \
     && cargo install cargo-chef
- 
+
 WORKDIR /build
  
 ###############################################################################
@@ -31,11 +30,11 @@ RUN cargo chef prepare --recipe-path recipe.json
 # Build the dependencies when Cargo.toml + Cargo.lock change
 ###############################################################################
 FROM chef AS rust-builder
- 
+
 COPY --from=planner /build/recipe.json recipe.json
 
 RUN cargo chef cook --release --recipe-path recipe.json
- 
+
 ###############################################################################
 # Compile actual fmhy_downloader
 ###############################################################################
@@ -46,9 +45,9 @@ COPY Cargo.toml .
 RUN cargo build --release
 
 ###############################################################################
-# Actual container with chromium and rust runtime
+# Actual runtime container
 ###############################################################################
-FROM debian:bookworm-slim
+FROM alpine:latest
 
 ARG PUID=1000
 ARG PGID=1000
@@ -72,15 +71,15 @@ ENV PUID=${PUID} \
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-		# Utilities
+# Utilities. shadow provides groupadd/useradd, su-exec is alpine's gosu
+RUN apk add --no-cache \
+        bash \
         ca-certificates \
         curl \
         procps \
-		gosu \
-    # Clean up temporary files
-    && rm -rf /var/lib/apt/lists/* /tmp/*.deb
+        shadow \
+        su-exec \
+        tzdata
 
 # Copy the compiled Rust binary from the build stage
 COPY --from=rust-builder /build/target/release/${APP_BIN} /app/${APP_BIN}

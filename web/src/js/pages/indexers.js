@@ -59,51 +59,86 @@ export async function render(view) {
     renderTable(view);
 }
 
+function sectionHeader(text) {
+    return `<h3 class="text-uppercase text-secondary fw-semibold small letter-spacing-1 mb-3">${text}</h3>`;
+}
+
 function formHtml() {
     return `
         <form data-indexer-form>
-            <div class="mb-3">
-                <label class="form-label" for="spec-select">Based on specification</label>
-                <select class="form-select" id="spec-select" name="spec"></select>
-            </div>
-            <div class="mb-3">
-                <label class="form-label" for="indexer-name">Name</label>
-                <input class="form-control" id="indexer-name" name="name" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label" for="indexer-server">Server</label>
-                <select class="form-select" id="indexer-server" name="server"></select>
-                <div class="form-text" data-server-description></div>
-            </div>
-            <dl class="row small text-secondary mb-3" data-spec-info hidden>
-                <dt class="col-sm-4">Algorithm</dt><dd class="col-sm-8" data-info-algorithm></dd>
-                <dt class="col-sm-4">Stream type</dt><dd class="col-sm-8" data-info-stream-type></dd>
-                <dt class="col-sm-4">Search URL</dt><dd class="col-sm-8 text-truncate" data-info-search-url></dd>
-            </dl>
-            <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" id="indexer-cf" name="uses_cloudflare">
-                <label class="form-check-label" for="indexer-cf">Uses Cloudflare</label>
-            </div>
-            <div class="row g-2 mb-3">
-                <div class="col">
-                    <label class="form-label" for="seg-timeout">Segment timeout (s)</label>
-                    <input type="number" min="0" class="form-control" id="seg-timeout" name="segment_timeout" value="5">
+            <fieldset class="indexer-section mb-4">
+                ${sectionHeader("Specification")}
+                <div class="mb-3">
+                    <label class="form-label" for="spec-select">Based on specification</label>
+                    <select class="form-select" id="spec-select" name="spec"></select>
                 </div>
-                <div class="col">
-                    <label class="form-label" for="seg-attempts">Segment attempts</label>
-                    <input type="number" min="0" class="form-control" id="seg-attempts" name="segment_attempts" value="5">
+                <div class="row g-2">
+                    <div class="col-sm-8 mb-3">
+                        <label class="form-label" for="indexer-name">Name</label>
+                        <input class="form-control" id="indexer-name" name="name" required>
+                    </div>
+                    <div class="col-sm-4 mb-3">
+                        <label class="form-label" for="indexer-priority">Priority</label>
+                        <input type="number" min="0" max="255" class="form-control" id="indexer-priority" name="priority" value="0">
+                    </div>
                 </div>
-            </div>
-            <div class="row g-2 mb-3">
-                <div class="col">
-                    <label class="form-label" for="rm-front">Remove front bytes</label>
-                    <input type="number" min="0" class="form-control" id="rm-front" name="remove_front_bytes" value="0">
+            </fieldset>
+
+            <fieldset class="indexer-section indexer-section-divider mb-4">
+                ${sectionHeader("Server")}
+                <div class="mb-3">
+                    <label class="form-label" for="indexer-server">Server</label>
+                    <select class="form-select" id="indexer-server" name="server"></select>
+                    <div class="form-text" data-server-description></div>
                 </div>
-                <div class="col">
-                    <label class="form-label" for="rm-back">Remove back bytes</label>
-                    <input type="number" min="0" class="form-control" id="rm-back" name="remove_back_bytes" value="0">
+                <dl class="row small text-secondary mb-3" data-spec-info hidden>
+                    <dt class="col-sm-4">Algorithm</dt><dd class="col-sm-8" data-info-algorithm></dd>
+                    <dt class="col-sm-4">Stream type</dt><dd class="col-sm-8" data-info-stream-type></dd>
+                    <dt class="col-sm-4">Search URL</dt><dd class="col-sm-8 text-truncate" data-info-search-url></dd>
+                </dl>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" id="indexer-cf" name="uses_cloudflare">
+                    <label class="form-check-label" for="indexer-cf">Uses Cloudflare</label>
                 </div>
-            </div>
+            </fieldset>
+
+            <fieldset class="indexer-section indexer-section-divider mb-4">
+                ${sectionHeader("Download tuning")}
+                <div class="row g-2 mb-3">
+                    <div class="col">
+                        <label class="form-label" for="dl-order">Order</label>
+                        <select class="form-select" id="dl-order" name="order">
+                            <option value="parallel">Parallel</option>
+                            <option value="sequential">Sequential</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <label class="form-label" for="dl-max-requests">Max requests/sec</label>
+                        <input type="number" min="1" class="form-control" id="dl-max-requests" name="max_requests" placeholder="Unlimited">
+                    </div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col">
+                        <label class="form-label" for="seg-timeout">Segment timeout (s)</label>
+                        <input type="number" min="0" class="form-control" id="seg-timeout" name="segment_timeout" value="5">
+                    </div>
+                    <div class="col">
+                        <label class="form-label" for="seg-attempts">Segment attempts</label>
+                        <input type="number" min="0" class="form-control" id="seg-attempts" name="segment_attempts" value="5">
+                    </div>
+                </div>
+                <div class="row g-2 mb-0">
+                    <div class="col">
+                        <label class="form-label" for="rm-front">Remove front bytes</label>
+                        <input type="number" min="0" class="form-control" id="rm-front" name="remove_front_bytes" value="0">
+                    </div>
+                    <div class="col">
+                        <label class="form-label" for="rm-back">Remove back bytes</label>
+                        <input type="number" min="0" class="form-control" id="rm-back" name="remove_back_bytes" value="0">
+                    </div>
+                </div>
+            </fieldset>
+
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">Save indexer</button>
                 <button type="button" class="btn btn-secondary" data-reset-form>Reset</button>
@@ -137,11 +172,14 @@ function applySpec(view, spec) {
     };
 
     form.name.value = spec.name;
+    form.priority.value = 0;
     form.uses_cloudflare.checked = spec.uses_cloudflare;
 
     populateServerSelect(view, spec.server_list, spec.server_list[0]?.name);
 
     const download = spec.download;
+    form.order.value = download.order || "parallel";
+    form.max_requests.value = download.max_requests ?? "";
     form.segment_timeout.value = download.segment_download.segment_timeout;
     form.segment_attempts.value = download.segment_download.segment_attempts;
     form.remove_front_bytes.value = download.segment_post_download.remove_front_bytes;
@@ -272,10 +310,13 @@ function buildIndexer(view) {
         name: form.name.value.trim(),
         algorithm_name: formBase.algorithm_name,
         server,
+        priority: Number(form.priority.value) || 0,
         uses_cloudflare: form.uses_cloudflare.checked,
         search: formBase.search,
         stream: formBase.stream,
         download: {
+            max_requests: parseMaxRequests(form.max_requests.value),
+            order: form.order.value,
             segment_download: {
                 segment_timeout: Number(form.segment_timeout.value),
                 segment_attempts: Number(form.segment_attempts.value),
@@ -288,6 +329,16 @@ function buildIndexer(view) {
         },
         based_on: formBase.based_on,
     };
+}
+
+// Map the max-requests input to the backend's Option<u32>: blank or non-positive -> null (unlimited).
+function parseMaxRequests(value) {
+    const trimmed = String(value).trim();
+    if (trimmed === "") {
+        return null;
+    }
+    const number = Number(trimmed);
+    return Number.isFinite(number) && number > 0 ? number : null;
 }
 
 function resetForm(view) {
@@ -310,8 +361,11 @@ function renderTable(view) {
         return;
     }
 
-    const rows = indexers.map((indexer) => `
+    const sorted = [...indexers].sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+
+    const rows = sorted.map((indexer) => `
         <tr>
+            <td>${indexer.priority ?? 0}</td>
             <td>${escapeHtml(indexer.name)}</td>
             <td class="text-truncate" style="max-width: 160px">${escapeHtml(indexer.server?.name || "")}</td>
             <td>${escapeHtml(indexer.algorithm_name || "")}</td>
@@ -326,7 +380,7 @@ function renderTable(view) {
     container.innerHTML = `
         <div class="table-responsive">
             <table class="table table-dark table-hover align-middle">
-                <thead><tr><th>Name</th><th>Server</th><th>Algorithm</th><th>Cloudflare</th><th>Based on</th><th></th></tr></thead>
+                <thead><tr><th>Priority</th><th>Name</th><th>Server</th><th>Algorithm</th><th>Cloudflare</th><th>Based on</th><th></th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>
         </div>`;
@@ -367,10 +421,13 @@ function loadForEdit(view, name) {
     };
 
     form.name.value = indexer.name;
+    form.priority.value = indexer.priority ?? 0;
     form.uses_cloudflare.checked = indexer.uses_cloudflare;
 
     populateServerSelect(view, servers, indexer.server.name);
 
+    form.order.value = indexer.download.order || "parallel";
+    form.max_requests.value = indexer.download.max_requests ?? "";
     form.segment_timeout.value = indexer.download.segment_download.segment_timeout;
     form.segment_attempts.value = indexer.download.segment_download.segment_attempts;
     form.remove_front_bytes.value = indexer.download.segment_post_download.remove_front_bytes;
