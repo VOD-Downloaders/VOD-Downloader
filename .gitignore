@@ -22,6 +22,9 @@
 
 **/.vscode
 
+# Vim
+**/Session.vim
+
 # Project output
 /output/
 /config/
