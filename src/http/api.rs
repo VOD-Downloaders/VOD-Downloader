@@ -21,7 +21,6 @@ use crate::config;
 use crate::request;
 use crate::search;
 use crate::download;
-use crate::streams;
 
 const OUTPUT_DIRECTORY: &str = "/output/";
 
@@ -499,24 +498,16 @@ pub async fn post_start_download(
     tokio::spawn(async move {
         // Convert stream to downloadable stream
         *download_info_clone.status.write().await = download::DownloadStatus::Converting;
-        let downloadable = match streams::convert_search_stream_to_downloadable(&indexer, &requester, payload.stream).await {
-            Ok(downloadable) => downloadable,
-            Err(error) => {
-                error!("Failed to convert stream to a downloadable object, error: {}", error);
-                *download_info_clone.status.write().await = download::DownloadStatus::Failed(error.to_string());
-                *download_info_clone.end_time.write().await = Some(Utc::now());
-                return;
-            },
-        };
 
         // Wait for a download slot for this host
-        let host = downloadable.rate_limit_host();
+        let host = payload.stream.rate_limit_host();
         *download_info_clone.status.write().await = download::DownloadStatus::Queued;
         let _permit = state_clone.scheduler.acquire(host.as_str(), &indexer.download.order).await;
 
         // Start the actual download
         *download_info_clone.status.write().await = download::DownloadStatus::Starting;
-        let download_result = download::download_stream(&indexer, downloadable, &requester, output_file.as_path(), &download_info_clone.status).await;
+        let download_result =
+            download::download_stream(&indexer, payload.stream, &requester, output_file.as_path(), &download_info_clone.status).await;
         *download_info_clone.end_time.write().await = Some(Utc::now());
 
         if let Err(error) = download_result {

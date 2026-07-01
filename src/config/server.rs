@@ -1,7 +1,7 @@
 use url::Url;
 use serde::{Serialize, Deserialize};
 
-use crate::config::{StreamSpecification, DownloadSpecification};
+use crate::config::{/*StreamSpecification,*/ DownloadSpecification};
 
 /////////////////////////////////////////////////////
 // IndexerServer
@@ -12,6 +12,6 @@ pub struct IndexerServer {
     pub description: String,
     pub search_url: Url,
 
-    pub stream: Option<StreamSpecification>,
+    // pub stream: Option<StreamSpecification>,
     pub download: Option<DownloadSpecification>,
 }

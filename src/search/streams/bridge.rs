@@ -33,8 +33,14 @@ pub struct BridgeSearchParameters {
     pub imdb_id: String,
     #[serde(rename = "serverUrl")]
     pub server_url: Url,
+    #[serde(rename = "emulateUrl")]
     pub emulate_url: Url,
-    pub headers: HashMap<String, String>,
+    #[serde(rename = "userAgent")]
+    pub user_agent: String,
+    #[serde(rename = "searchHeaders")]
+    pub search_headers: HashMap<String, String>,
+    #[serde(rename = "streamHeaders")]
+    pub stream_headers: HashMap<String, String>,
 }
 
 /////////////////////////////////////////////////////
@@ -47,16 +53,6 @@ pub async fn bridge_search_movie_streams(
         .clone()
         .join(format!("/api/{}/movie", indexer.algorithm_name).as_str())
         .unwrap();
-    let headers = {
-        let mut headers = indexer.search.headers.clone();
-        if let Some(server_stream) = &indexer.server.stream {
-            // Make the serverside headers override the global headers
-            for (key, value) in &server_stream.headers {
-                headers.insert(key.clone(), value.clone());
-            }
-        }
-        headers
-    };
 
     let parameters = serde_qs::to_string(&BridgeSearchParameters {
         name: name.to_string(),
@@ -66,7 +62,9 @@ pub async fn bridge_search_movie_streams(
         imdb_id: imdb_id,
         server_url: indexer.server.search_url.clone(),
         emulate_url: indexer.search.emulate_url.clone(),
-        headers: headers,
+        user_agent: requester.get_specification().user_agent.clone(),
+        search_headers: indexer.search.headers.clone(),
+        stream_headers: indexer.stream.headers.clone(),
     })
     .unwrap();
     url.set_query(Some(parameters.as_str()));
@@ -87,16 +85,6 @@ pub async fn bridge_search_episode_streams(
         .clone()
         .join(format!("/api/{}/series", indexer.algorithm_name).as_str())
         .unwrap();
-    let headers = {
-        let mut headers = indexer.search.headers.clone();
-        if let Some(server_stream) = &indexer.server.stream {
-            // Make the serverside headers override the global headers
-            for (key, value) in &server_stream.headers {
-                headers.insert(key.clone(), value.clone());
-            }
-        }
-        headers
-    };
 
     let parameters = serde_qs::to_string(&BridgeSearchParameters {
         name: name.to_string(),
@@ -106,7 +94,9 @@ pub async fn bridge_search_episode_streams(
         imdb_id: imdb_id,
         server_url: indexer.server.search_url.clone(),
         emulate_url: indexer.search.emulate_url.clone(),
-        headers: headers,
+        user_agent: requester.get_specification().user_agent.clone(),
+        search_headers: indexer.search.headers.clone(),
+        stream_headers: indexer.stream.headers.clone(),
     })
     .unwrap();
     url.set_query(Some(parameters.as_str()));

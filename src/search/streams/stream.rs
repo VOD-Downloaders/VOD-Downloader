@@ -6,8 +6,19 @@ use serde::{Serialize, Deserialize};
 /////////////////////////////////////////////////////
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Stream {
-    pub url: Url,
     pub quality: String,
+    pub video_segments: Vec<Url>,
+    pub audio_channels: Vec<(String, Url)>, // lang, url
+}
+
+impl Stream {
+    pub fn rate_limit_host(&self) -> String {
+        const INVALID_HOST: &str = "https://invalidurl.com";
+        self.video_segments
+            .first()
+            .map(|segment| segment.to_string())
+            .unwrap_or(INVALID_HOST.to_string())
+    }
 }
 
 /////////////////////////////////////////////////////
@@ -15,8 +26,8 @@ pub struct Stream {
 /////////////////////////////////////////////////////
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Subtitle {
+    pub lang: String,
     pub url: Url,
-    pub language: String,
 }
 
 /////////////////////////////////////////////////////
