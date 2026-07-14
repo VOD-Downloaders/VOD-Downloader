@@ -2,13 +2,22 @@ use url::Url;
 use serde::{Serialize, Deserialize};
 
 /////////////////////////////////////////////////////
+// AudioChannel
+/////////////////////////////////////////////////////
+#[derive(Debug, Deserialize, Serialize)]
+pub struct AudioChannel {
+    pub lang: String,
+    pub segments: Vec<Url>,
+}
+
+/////////////////////////////////////////////////////
 // Stream
 /////////////////////////////////////////////////////
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Stream {
     pub quality: String,
     pub video_segments: Vec<Url>,
-    pub audio_channels: Vec<(String, Url)>, // lang, url
+    pub audio_channels: Vec<AudioChannel>, // lang, url // empty if original
 }
 
 impl Stream {
